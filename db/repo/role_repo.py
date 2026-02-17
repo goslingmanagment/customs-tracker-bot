@@ -62,12 +62,19 @@ async def upsert_role_member(
     if by_id and by_username and by_id.id != by_username.id:
         primary = by_id
         secondary = by_username
-        if primary.user_id is None:
-            primary.user_id = secondary.user_id
-        if not primary.username and secondary.username:
-            primary.username = secondary.username
-        primary.updated_at = datetime.now(timezone.utc).isoformat()
+        secondary_user_id = secondary.user_id
+        secondary_username = secondary.username
+
+        # Avoid transient unique conflicts during flush by removing the
+        # duplicate row first, then copying missing identity fields.
         await session.delete(secondary)
+        await session.flush()
+
+        if primary.user_id is None:
+            primary.user_id = secondary_user_id
+        if not primary.username and secondary_username:
+            primary.username = secondary_username
+        primary.updated_at = datetime.now(timezone.utc).isoformat()
         existing = primary
     elif existing:
         if user_id is not None and existing.user_id != user_id:
