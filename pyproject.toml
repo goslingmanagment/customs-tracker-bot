@@ -1,0 +1,25 @@
+[project]
+name = "customs-bot"
+version = "0.2.0"
+description = "Telegram bot for tracking custom content orders"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.0",
+    "aiosqlite",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic",
+    "anthropic",
+    "pydantic-settings",
+    "structlog",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
