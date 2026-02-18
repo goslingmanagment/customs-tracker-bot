@@ -5,8 +5,11 @@ from tests.fakes import FakeCallbackQuery, FakeSessionFactory, FakeTask, make_us
 
 
 class _Session:
-    def __init__(self):
+    def __init__(self, *, pending: bool = False):
         self.commits = 0
+        self.new = {object()} if pending else set()
+        self.dirty = set()
+        self.deleted = set()
 
     async def commit(self):
         self.commits += 1
@@ -61,7 +64,7 @@ async def test_callback_dispatches_handler_and_commits(monkeypatch):
     msg = FakeMessage(text="x", chat_id=-100, topic_id=777)
     cb = FakeCallbackQuery(data="task:5:open", message=msg, from_user=make_user(7, "actor"))
 
-    session = _Session()
+    session = _Session(pending=False)
     task = FakeTask(id=5, chat_id=-100, topic_id=777)
     called = {"value": False}
 
@@ -86,4 +89,35 @@ async def test_callback_dispatches_handler_and_commits(monkeypatch):
     await callbacks.handle_task_callback(cb)
 
     assert called["value"] is True
+    assert session.commits == 0
+
+
+@pytest.mark.asyncio
+async def test_callback_dispatches_handler_and_commits_when_pending(monkeypatch):
+    from tests.fakes import FakeMessage
+
+    msg = FakeMessage(text="x", chat_id=-100, topic_id=777)
+    cb = FakeCallbackQuery(data="task:5:open", message=msg, from_user=make_user(7, "actor"))
+
+    session = _Session(pending=True)
+    task = FakeTask(id=5, chat_id=-100, topic_id=777)
+
+    async def _resolve(*_args, **_kwargs):
+        return False
+
+    async def _get_task(*_args, **_kwargs):
+        return task
+
+    async def _handler(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(callbacks, "parse_callback", lambda _d: (5, "open"))
+    monkeypatch.setattr(callbacks, "is_allowed", lambda _a, _u: True)
+    monkeypatch.setattr(callbacks, "async_session", FakeSessionFactory(session))
+    monkeypatch.setattr(callbacks, "resolve_known_roles", _resolve)
+    monkeypatch.setattr(callbacks.task_repo, "get_task_by_id", _get_task)
+    monkeypatch.setattr(callbacks, "ACTION_HANDLERS", {"open": _handler})
+
+    await callbacks.handle_task_callback(cb)
+
     assert session.commits == 1

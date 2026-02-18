@@ -4,6 +4,18 @@ from handlers.callback_actions import delete_actions
 from tests.fakes import FakeCallbackQuery, FakeMessage, FakeTask, make_user
 
 
+class _Session:
+    def __init__(self):
+        self.commits = 0
+        self.rollbacks = 0
+
+    async def commit(self):
+        self.commits += 1
+
+    async def rollback(self):
+        self.rollbacks += 1
+
+
 @pytest.mark.asyncio
 async def test_action_not_task_rejects_non_draft():
     cb = FakeCallbackQuery(data="task:1:not_task")
@@ -31,11 +43,16 @@ async def test_action_not_task_confirm_expired(monkeypatch):
 async def test_action_not_task_confirm_success(monkeypatch):
     cb = FakeCallbackQuery(data="task:1:not_task_confirm", message=FakeMessage(text="x"))
     task = FakeTask(id=1, status="draft")
+    session = _Session()
 
     deleted = {"value": False}
 
     monkeypatch.setattr(delete_actions, "consume_delete_confirmation", lambda *_a, **_k: True)
-    monkeypatch.setattr(delete_actions, "send_feedback", lambda *_a, **_k: __import__("asyncio").sleep(0))
+    monkeypatch.setattr(
+        delete_actions,
+        "send_feedback_best_effort",
+        lambda *_a, **_k: __import__("asyncio").sleep(0, result=True),
+    )
     monkeypatch.setattr(
         delete_actions.task_repo,
         "delete_task",
@@ -48,10 +65,13 @@ async def test_action_not_task_confirm_success(monkeypatch):
 
     monkeypatch.setattr(delete_actions, "safe_delete_message", _safe_delete)
 
-    await delete_actions.action_not_task_confirm(cb, task, object(), make_user(1), "u", "@u")
+    await delete_actions.action_not_task_confirm(
+        cb, task, session, make_user(1), "u", "@u"
+    )
 
     assert deleted["value"] is True
     assert cb.answers and cb.answers[0][0] == "Удалено"
+    assert session.commits == 1
 
 
 @pytest.mark.asyncio

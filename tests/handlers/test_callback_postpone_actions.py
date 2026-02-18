@@ -6,6 +6,18 @@ from handlers.callback_actions import postpone_actions
 from tests.fakes import FakeCallbackQuery, FakeMessage, FakeTask, make_user
 
 
+class _Session:
+    def __init__(self):
+        self.commits = 0
+        self.rollbacks = 0
+
+    async def commit(self):
+        self.commits += 1
+
+    async def rollback(self):
+        self.rollbacks += 1
+
+
 def test_shift_deadline_uses_today_when_missing(monkeypatch):
     monkeypatch.setattr(postpone_actions, "today_local", lambda: "2026-02-18")
     iso_date, display = postpone_actions._shift_deadline(None, 3)
@@ -68,6 +80,7 @@ async def test_action_postpone_quick_success(monkeypatch):
     cb = FakeCallbackQuery(data="task:1:postpone_3d", from_user=make_user(1, "actor"))
     task = FakeTask(id=1, status="processing", deadline="2026-02-20")
     pending = SimpleNamespace(task_id=1)
+    session = _Session()
 
     calls = {"updated": False, "cleared": False}
 
@@ -75,7 +88,11 @@ async def test_action_postpone_quick_success(monkeypatch):
     monkeypatch.setattr(postpone_actions, "postpone_status_error", lambda _status: None)
     monkeypatch.setattr(postpone_actions, "refresh_card", lambda *_a, **_k: __import__("asyncio").sleep(0, result=True))
     monkeypatch.setattr(postpone_actions, "clear_pending_postpone_prompt_markup", lambda *_a, **_k: __import__("asyncio").sleep(0))
-    monkeypatch.setattr(postpone_actions, "send_feedback", lambda *_a, **_k: __import__("asyncio").sleep(0))
+    monkeypatch.setattr(
+        postpone_actions,
+        "send_feedback_best_effort",
+        lambda *_a, **_k: __import__("asyncio").sleep(0, result=True),
+    )
 
     async def _update_deadline(_session, task_obj, new_deadline, **_kwargs):
         calls["updated"] = True
@@ -87,8 +104,11 @@ async def test_action_postpone_quick_success(monkeypatch):
     monkeypatch.setattr(postpone_actions.task_repo, "update_task_deadline", _update_deadline)
     monkeypatch.setattr(postpone_actions, "clear_pending_postpone", _clear)
 
-    await postpone_actions._action_postpone_quick(cb, task, object(), cb.from_user, "actor", "@actor", days=3)
+    await postpone_actions._action_postpone_quick(
+        cb, task, session, cb.from_user, "actor", "@actor", days=3
+    )
 
     assert calls["updated"] is True
     assert calls["cleared"] is True
     assert cb.answers and "+3 дн" in cb.answers[0][0]
+    assert session.commits == 1
