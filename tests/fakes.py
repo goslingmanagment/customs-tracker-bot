@@ -25,6 +25,7 @@ class FakeBot:
         self.sent_messages: list[dict[str, Any]] = []
         self.edited_texts: list[dict[str, Any]] = []
         self.edited_reply_markups: list[dict[str, Any]] = []
+        self.deleted_messages: list[dict[str, Any]] = []
 
     async def send_message(self, chat_id: int, text: str, **kwargs):
         payload = {"chat_id": chat_id, "text": text, **kwargs}
@@ -61,6 +62,14 @@ class FakeBot:
                 "chat_id": chat_id,
                 "message_id": message_id,
                 "reply_markup": reply_markup,
+            }
+        )
+
+    async def delete_message(self, chat_id: int, message_id: int):
+        self.deleted_messages.append(
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
             }
         )
 

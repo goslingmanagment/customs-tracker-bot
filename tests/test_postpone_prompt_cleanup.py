@@ -8,7 +8,11 @@ from services import postpone_service
 
 class _FakeBot:
     def __init__(self):
+        self.deleted_messages: list[tuple[int, int]] = []
         self.reply_markup_edits: list[tuple[int, int, object | None]] = []
+
+    async def delete_message(self, chat_id: int, message_id: int):
+        self.deleted_messages.append((chat_id, message_id))
 
     async def edit_message_reply_markup(self, chat_id: int, message_id: int, reply_markup=None):
         self.reply_markup_edits.append((chat_id, message_id, reply_markup))
@@ -88,7 +92,8 @@ async def test_maybe_process_pending_postpone_clears_prompt_markup_after_success
 
     assert handled is True
     assert postpone_service.get_pending_postpone(user_id) is None
-    assert bot.reply_markup_edits == [(chat_id, prompt_message_id, None)]
+    assert bot.deleted_messages == [(chat_id, prompt_message_id)]
+    assert bot.reply_markup_edits == []
 
 
 @pytest.mark.asyncio
@@ -120,4 +125,5 @@ async def test_maybe_process_pending_postpone_clears_prompt_markup_after_timeout
 
     assert handled is True
     assert message.replies == ["Время для ввода даты истекло. Нажмите ⏰ снова."]
-    assert bot.reply_markup_edits == [(chat_id, prompt_message_id, None)]
+    assert bot.deleted_messages == [(chat_id, prompt_message_id)]
+    assert bot.reply_markup_edits == []

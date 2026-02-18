@@ -98,18 +98,33 @@ async def clear_pending_postpone_prompt_markup(bot, pending: PendingPostpone | N
     if pending is None or pending.prompt_message_id is None:
         return
     try:
+        await bot.delete_message(
+            chat_id=pending.chat_id,
+            message_id=pending.prompt_message_id,
+        )
+        return
+    except Exception as delete_exc:
+        logger.warning(
+            "postpone_prompt_delete_failed",
+            task_id=pending.task_id,
+            chat_id=pending.chat_id,
+            message_id=pending.prompt_message_id,
+            error=str(delete_exc),
+        )
+
+    try:
         await bot.edit_message_reply_markup(
             chat_id=pending.chat_id,
             message_id=pending.prompt_message_id,
             reply_markup=None,
         )
-    except Exception as exc:
+    except Exception as markup_exc:
         logger.warning(
             "postpone_prompt_markup_clear_failed",
             task_id=pending.task_id,
             chat_id=pending.chat_id,
             message_id=pending.prompt_message_id,
-            error=str(exc),
+            error=str(markup_exc),
         )
 
 

@@ -104,33 +104,24 @@ async def action_cancel_postpone(callback, task, session, user, user_name, user_
     if not pending or pending.task_id != task.id:
         if callback.message:
             try:
-                await callback.bot.edit_message_reply_markup(
-                    chat_id=callback.message.chat.id,
-                    message_id=callback.message.message_id,
-                    reply_markup=None,
-                )
-            except Exception as exc:
-                logger.error(
-                    "postpone_stale_markup_clear_failed",
-                    task_id=task.id,
-                    error=str(exc),
-                )
+                await callback.message.delete()
+            except Exception:
+                try:
+                    await callback.bot.edit_message_reply_markup(
+                        chat_id=callback.message.chat.id,
+                        message_id=callback.message.message_id,
+                        reply_markup=None,
+                    )
+                except Exception as exc:
+                    logger.error(
+                        "postpone_stale_markup_clear_failed",
+                        task_id=task.id,
+                        error=str(exc),
+                    )
         await callback.answer("Нет активного ожидания даты для этого кастома")
         return
     clear_pending_postpone(user.id)
-    if callback.message:
-        try:
-            await callback.bot.edit_message_reply_markup(
-                chat_id=callback.message.chat.id,
-                message_id=callback.message.message_id,
-                reply_markup=None,
-            )
-        except Exception as exc:
-            logger.error(
-                "postpone_cancel_markup_clear_failed",
-                task_id=task.id,
-                error=str(exc),
-            )
+    await clear_pending_postpone_prompt_markup(callback.bot, pending)
     await send_feedback(
         callback.bot,
         task,
@@ -152,13 +143,16 @@ async def _action_postpone_quick(
     if not pending or pending.task_id != task.id:
         if callback.message:
             try:
-                await callback.bot.edit_message_reply_markup(
-                    chat_id=callback.message.chat.id,
-                    message_id=callback.message.message_id,
-                    reply_markup=None,
-                )
+                await callback.message.delete()
             except Exception:
-                pass
+                try:
+                    await callback.bot.edit_message_reply_markup(
+                        chat_id=callback.message.chat.id,
+                        message_id=callback.message.message_id,
+                        reply_markup=None,
+                    )
+                except Exception:
+                    pass
         await callback.answer("Сессия переноса неактивна. Нажмите ⏰ снова.")
         return
 
