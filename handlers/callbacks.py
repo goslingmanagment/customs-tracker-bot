@@ -6,7 +6,12 @@ from aiogram.types import CallbackQuery
 from core.text_utils import user_display_name
 from db.engine import async_session
 from db.repo import task_repo
-from handlers.callback_actions.common import denied_message, is_allowed, parse_callback
+from handlers.callback_actions.common import (
+    commit_session_safely,
+    denied_message,
+    is_allowed,
+    parse_callback,
+)
 from handlers.callback_actions.delete_actions import (
     action_not_task,
     action_not_task_cancel,
@@ -92,4 +97,11 @@ async def handle_task_callback(callback: CallbackQuery):
             return
 
         await handler_fn(callback, task, session, user, user_name, user_display)
-        await session.commit()
+        if session.new or session.dirty or session.deleted:
+            if not await commit_session_safely(
+                session,
+                callback,
+                action=f"fallback:{action}",
+                task_id=task_id,
+            ):
+                return

@@ -34,7 +34,13 @@ def _admin_mentions() -> str:
     return " ".join(deduped)
 
 
-async def _notify_admins_about_ai_failure(message: Message) -> None:
+async def _notify_admins(
+    message: Message,
+    text: str,
+    *,
+    event: str,
+    task_id: int | None = None,
+) -> None:
     mentions = _admin_mentions()
     if not mentions:
         return
@@ -43,18 +49,42 @@ async def _notify_admins_about_ai_failure(message: Message) -> None:
             chat_id=message.chat.id,
             message_thread_id=message.message_thread_id,
             reply_to_message_id=message.message_id,
-            text=(
-                f"⚠️ Для админов: AI не смог классифицировать сообщение. {mentions}\n"
-                "Используйте /add ответом на сообщение, чтобы зарегистрировать вручную."
-            ),
+            text=f"⚠️ Для админов: {text}\n{mentions}",
         )
     except Exception as exc:
         logger.error(
-            "ai_failure_admin_notification_failed",
+            "admin_notification_failed",
+            event=event,
+            task_id=task_id,
             error=str(exc),
             message_id=message.message_id,
             chat_id=message.chat.id,
         )
+
+
+async def _notify_admins_about_ai_failure(message: Message) -> None:
+    await _notify_admins(
+        message,
+        (
+            "AI не смог классифицировать сообщение.\n"
+            "Используйте /add ответом на сообщение, чтобы зарегистрировать вручную."
+        ),
+        event="ai_classification_failed",
+    )
+
+
+async def _notify_admins_about_operational_issue(
+    message: Message,
+    text: str,
+    *,
+    task_id: int | None = None,
+) -> None:
+    await _notify_admins(
+        message,
+        text,
+        event="brief_pipeline_operational_issue",
+        task_id=task_id,
+    )
 
 
 async def process_brief(message: Message, session: AsyncSession) -> None:
@@ -160,7 +190,31 @@ async def process_brief(message: Message, session: AsyncSession) -> None:
     try:
         task, created = await task_repo.create_task(session, **kwargs)
     except Exception as e:
+        await session.rollback()
         logger.error("task_create_failed", error=str(e), **context)
+        try:
+            await message_repo.log_parse_failure(
+                session,
+                message.message_id,
+                text,
+                "task_create_failed",
+                str(e),
+            )
+            await session.commit()
+        except Exception as persist_exc:
+            await session.rollback()
+            logger.error(
+                "task_create_failure_persist_failed",
+                error=str(persist_exc),
+                **context,
+            )
+        await _notify_admins_about_operational_issue(
+            message,
+            (
+                "Не удалось сохранить распознанный бриф в базе. "
+                "Проверьте сообщение вручную и используйте /add."
+            ),
+        )
         return
 
     if not created:
@@ -171,22 +225,66 @@ async def process_brief(message: Message, session: AsyncSession) -> None:
         logger.info("task_create_race_recovered", task_id=task.id, **context)
         return
 
-    # Send confirmation card
+    try:
+        await message_repo.mark_message_processed(
+            session, message.chat.id, message.message_id, is_task=True
+        )
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        logger.error(
+            "task_persist_commit_failed",
+            task_id=task.id,
+            error=str(e),
+            **context,
+        )
+        await _notify_admins_about_operational_issue(
+            message,
+            (
+                f"Кастом #{task.id:03d} не удалось полностью сохранить. "
+                "Проверьте сообщение вручную и используйте /add при необходимости."
+            ),
+            task_id=task.id,
+        )
+        return
+
+    # Send confirmation card after durable persistence.
     card_text, keyboard = build_draft_card(task)
     try:
         sent = await message.reply(card_text, reply_markup=keyboard)
     except Exception as e:
-        await session.rollback()
-        logger.error("task_card_send_failed", error=str(e), **context)
+        logger.error("task_card_send_failed", task_id=task.id, error=str(e), **context)
+        await _notify_admins_about_operational_issue(
+            message,
+            (
+                f"Кастом #{task.id:03d} сохранён, но карточку не удалось отправить. "
+                f"Откройте /task {task.id}."
+            ),
+            task_id=task.id,
+        )
         return
 
-    await task_repo.update_task_bot_message_id(session, task, sent.message_id)
-    await session.commit()
-
-    await message_repo.mark_message_processed(
-        session, message.chat.id, message.message_id, is_task=True
-    )
-    await session.commit()
+    try:
+        await task_repo.update_task_bot_message_id(session, task, sent.message_id)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        logger.error(
+            "task_bot_message_bind_failed",
+            task_id=task.id,
+            bot_message_id=sent.message_id,
+            error=str(e),
+            **context,
+        )
+        await _notify_admins_about_operational_issue(
+            message,
+            (
+                f"Кастом #{task.id:03d} сохранён, но привязка карточки не удалась. "
+                f"Проверьте /task {task.id}."
+            ),
+            task_id=task.id,
+        )
+        return
 
     logger.info(
         "brief_recognized",

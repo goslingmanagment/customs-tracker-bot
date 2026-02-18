@@ -6,9 +6,11 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from db.repo import task_repo
 
 from .common import (
+    commit_session_safely,
     consume_delete_confirmation,
     refresh_card,
     send_feedback,
+    send_feedback_best_effort,
     set_delete_confirmation,
     clear_delete_confirmation,
     safe_delete_message,
@@ -74,11 +76,17 @@ async def action_not_task_confirm(callback, task, session, user, user_name, user
         await refresh_card(callback, task)
         await callback.answer("Подтверждение истекло. Нажмите «Не бриф» снова")
         return
-    await send_feedback(
-        callback.bot, task,
-        f"🗑 {user_display} удалил(а) кастом #{task.id:03d} (не бриф)",
-    )
     await task_repo.delete_task(session, task)
+    if not await commit_session_safely(
+        session, callback, action="not_task_confirm", task_id=task.id
+    ):
+        return
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        f"🗑 {user_display} удалил(а) кастом #{task.id:03d} (не бриф)",
+        event="not_task_confirm_feedback",
+    )
     if not await safe_delete_message(callback, task.id):
         await callback.answer("Задача удалена, но сообщение не удалось удалить")
         return

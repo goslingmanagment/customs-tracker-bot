@@ -6,6 +6,7 @@ from typing import Any
 
 import structlog
 from aiogram.types import CallbackQuery
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import roles
 from core.permissions import is_admin_or_teamlead, is_model
@@ -89,6 +90,65 @@ async def send_feedback(bot, task: Task, text: str, reply_markup=None):
         message_thread_id=task.topic_id,
         reply_markup=reply_markup,
     )
+
+
+async def send_feedback_best_effort(
+    bot,
+    task: Task,
+    text: str,
+    reply_markup=None,
+    *,
+    event: str,
+) -> bool:
+    try:
+        await send_feedback(bot, task, text, reply_markup=reply_markup)
+        return True
+    except Exception as exc:
+        logger.error(
+            "feedback_send_failed",
+            event=event,
+            task_id=task.id,
+            error=str(exc),
+        )
+        return False
+
+
+async def commit_session_safely(
+    session: AsyncSession,
+    callback: CallbackQuery,
+    *,
+    action: str,
+    task_id: int | None = None,
+) -> bool:
+    try:
+        await session.commit()
+        return True
+    except Exception as exc:
+        try:
+            await session.rollback()
+        except Exception as rollback_exc:
+            logger.error(
+                "callback_commit_rollback_failed",
+                action=action,
+                task_id=task_id,
+                error=str(rollback_exc),
+            )
+        logger.error(
+            "callback_commit_failed",
+            action=action,
+            task_id=task_id,
+            error=str(exc),
+        )
+        try:
+            await callback.answer("Не удалось сохранить изменения. Попробуйте ещё раз.")
+        except Exception as answer_exc:
+            logger.error(
+                "callback_commit_error_answer_failed",
+                action=action,
+                task_id=task_id,
+                error=str(answer_exc),
+            )
+        return False
 
 
 def format_deadline_for_prompt(deadline: str | None) -> str:

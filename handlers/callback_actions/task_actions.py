@@ -7,10 +7,12 @@ from ui.formatters import format_amount
 
 from .common import (
     card_refresh_note,
+    commit_session_safely,
     model_mentions,
     refresh_card,
     safe_delete_message,
     send_feedback,
+    send_feedback_best_effort,
 )
 
 
@@ -23,6 +25,10 @@ async def action_confirm_brief(callback, task, session, user, user_name, user_di
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → awaiting_confirmation")
         return
+    if not await commit_session_safely(
+        session, callback, action="confirm_brief", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await callback.answer("Бриф подтверждён ✅")
     amount = format_amount(task.amount_total)
@@ -32,7 +38,12 @@ async def action_confirm_brief(callback, task, session, user, user_name, user_di
     mentions = model_mentions()
     if mentions:
         feedback += f" — {mentions}"
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="confirm_brief_feedback",
+    )
 
 
 async def action_take(callback, task, session, user, user_name, user_display):
@@ -44,6 +55,10 @@ async def action_take(callback, task, session, user, user_name, user_display):
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → processing")
         return
+    if not await commit_session_safely(
+        session, callback, action="take", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await callback.answer("Взято в работу 🎬")
     amount = format_amount(task.amount_total)
@@ -52,7 +67,12 @@ async def action_take(callback, task, session, user, user_name, user_display):
     )
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="take_feedback",
+    )
 
 
 async def action_finish(callback, task, session, user, user_name, user_display):
@@ -64,6 +84,10 @@ async def action_finish(callback, task, session, user, user_name, user_display):
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → finished")
         return
+    if not await commit_session_safely(
+        session, callback, action="finish", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await callback.answer("Отмечено как отснято 📹")
     feedback = (
@@ -71,7 +95,12 @@ async def action_finish(callback, task, session, user, user_name, user_display):
     )
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="finish_feedback",
+    )
 
 
 async def action_delivered(callback, task, session, user, user_name, user_display):
@@ -83,6 +112,10 @@ async def action_delivered(callback, task, session, user, user_name, user_displa
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → delivered")
         return
+    if not await commit_session_safely(
+        session, callback, action="delivered", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await callback.answer("Доставлено ✔️")
     amount = format_amount(task.amount_total)
@@ -92,7 +125,12 @@ async def action_delivered(callback, task, session, user, user_name, user_displa
     )
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="delivered_feedback",
+    )
 
 
 async def action_confirm_shot(callback, task, session, user, user_name, user_display):
@@ -104,13 +142,22 @@ async def action_confirm_shot(callback, task, session, user, user_name, user_dis
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → finished")
         return
+    if not await commit_session_safely(
+        session, callback, action="confirm_shot", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await safe_delete_message(callback, task.id)
     await callback.answer("Отмечено как отснято 📹")
     feedback = f"📹 {user_display} подтвердил(а) съёмку кастома #{task.id:03d}"
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="confirm_shot_feedback",
+    )
 
 
 async def action_deny_shot(callback, task, session, user, user_name, user_display):
@@ -129,6 +176,10 @@ async def action_confirm_delivered(callback, task, session, user, user_name, use
     except InvalidTransitionError:
         await callback.answer(f"Переход недоступен: {task.status} → delivered")
         return
+    if not await commit_session_safely(
+        session, callback, action="confirm_delivered", task_id=task.id
+    ):
+        return
     card_refreshed = await refresh_card(callback, task)
     await safe_delete_message(callback, task.id)
     await callback.answer("Доставлено ✔️")
@@ -139,7 +190,12 @@ async def action_confirm_delivered(callback, task, session, user, user_name, use
     )
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event="confirm_delivered_feedback",
+    )
 
 
 async def action_deny_delivered(callback, task, session, user, user_name, user_display):

@@ -17,9 +17,11 @@ from services.postpone_service import (
 
 from .common import (
     card_refresh_note,
+    commit_session_safely,
     format_deadline_for_prompt,
     refresh_card,
     send_feedback,
+    send_feedback_best_effort,
 )
 
 logger = structlog.get_logger()
@@ -177,6 +179,15 @@ async def _action_postpone_quick(
         changed_by_id=user.id,
         changed_by_name=user_name,
     )
+    if not await commit_session_safely(
+        session,
+        callback,
+        action=f"postpone_{days}d",
+        task_id=task.id,
+    ):
+        clear_pending_postpone(user.id)
+        await clear_pending_postpone_prompt_markup(callback.bot, pending)
+        return
 
     card_refreshed = await refresh_card(callback, task)
     clear_pending_postpone(user.id)
@@ -189,7 +200,12 @@ async def _action_postpone_quick(
     )
     if not card_refreshed:
         feedback += card_refresh_note(task.id)
-    await send_feedback(callback.bot, task, feedback)
+    await send_feedback_best_effort(
+        callback.bot,
+        task,
+        feedback,
+        event=f"postpone_{days}d_feedback",
+    )
 
 
 async def action_postpone_1d(callback, task, session, user, user_name, user_display):
