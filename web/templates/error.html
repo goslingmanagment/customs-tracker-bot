@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}{{ code }} - Customs Tracker{% endblock %}
+{% block title %}{{ code }} — Customs Tracker{% endblock %}
 
 {% block content %}
 <div class="flex flex-col items-center justify-center min-h-[50vh]">
     <div class="text-center">
-        <h1 class="text-6xl font-bold text-base-content/30 mb-4">{{ code }}</h1>
-        <p class="text-xl text-base-content/60 mb-6">{{ message }}</p>
-        <a href="/" class="btn btn-primary">На главную</a>
+        <div class="text-6xl font-medium text-ink-faint mb-4 font-mono">{{ code }}</div>
+        <p class="text-sm text-ink-tertiary mb-8">{{ message }}</p>
+        <a href="/"
+           class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-ink text-sand-50 text-sm font-medium
+                  hover:bg-ink-secondary transition-colors">
+            На главную
+        </a>
     </div>
 </div>
 {% endblock %}

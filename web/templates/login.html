@@ -1,40 +1,79 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="corporate">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - Customs Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <title>Вход — Customs Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sand: {
+                            50:  '#faf9f5',
+                            100: '#f5f3ec',
+                            200: '#ebe8dd',
+                            300: '#ddd8c8',
+                        },
+                        ink: {
+                            DEFAULT: '#1a1815',
+                            secondary: '#4a4740',
+                            tertiary: '#7a766d',
+                            muted: '#a09b90',
+                        },
+                        terra: {
+                            DEFAULT: '#c4704a',
+                            light: '#d4885e',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: #faf9f5;
+            -webkit-font-smoothing: antialiased;
+        }
+        input::placeholder { color: #a09b90; }
+        input:focus { outline: none; box-shadow: 0 0 0 1.5px #c4704a; border-color: #c4704a; }
+    </style>
 </head>
-<body class="min-h-screen bg-base-200 flex items-center justify-center">
-    <div class="card w-96 bg-base-100 shadow-xl">
-        <div class="card-body">
-            <h2 class="card-title text-2xl font-bold text-center w-full justify-center mb-2">
-                Customs Tracker
-            </h2>
+<body class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-[340px]">
+        <div class="text-center mb-10">
+            <h1 class="text-ink text-lg font-medium tracking-[-0.01em] mb-1.5">Customs Tracker</h1>
+            <p class="text-ink-tertiary text-[13px]">Введите кодовое слово для входа</p>
+        </div>
+
+        <div class="border border-sand-300 rounded-xl p-6 bg-white/60">
             <form method="post" action="/login">
-                <div class="form-control w-full">
-                    <label class="label">
-                        <span class="label-text">Кодовое слово</span>
-                    </label>
+                <div class="mb-5">
+                    <label class="block text-[13px] text-ink-secondary mb-2 font-medium">Кодовое слово</label>
                     <input
                         type="password"
                         name="code"
-                        placeholder="Введите кодовое слово..."
-                        class="input input-bordered w-full {% if error %}input-error{% endif %}"
+                        placeholder="Введите код..."
+                        class="w-full px-3.5 py-2.5 rounded-lg bg-sand-50 border border-sand-300 text-ink text-sm transition-colors"
                         required
                         autofocus
                     />
                     {% if error %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ error }}</span>
-                    </label>
+                    <p class="mt-2.5 text-[13px] text-[#b5564e]">{{ error }}</p>
                     {% endif %}
                 </div>
-                <div class="form-control mt-4">
-                    <button type="submit" class="btn btn-primary w-full">Войти</button>
-                </div>
+                <button type="submit"
+                        class="w-full py-2.5 rounded-lg bg-ink text-sand-50 text-sm font-medium
+                               hover:bg-ink-secondary transition-colors active:bg-ink">
+                    Войти
+                </button>
             </form>
         </div>
     </div>

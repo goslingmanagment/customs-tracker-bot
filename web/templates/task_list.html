@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Задачи - Customs Tracker{% endblock %}
+{% block title %}Задачи — Customs Tracker{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-6">Задачи</h1>
+<div class="mb-6">
+    <h1 class="text-ink text-[17px] font-medium tracking-[-0.01em]">Задачи</h1>
+</div>
 
 <!-- Filter tabs -->
-<div class="flex flex-wrap gap-2 mb-6">
+<div class="flex flex-wrap gap-1.5 mb-6 pb-4 border-b border-sand-300/60">
     {% set filters = [
         ("active", "Активные"),
         ("all", "Все"),
@@ -20,11 +22,17 @@
     ] %}
     {% for key, label in filters %}
     <button
-        class="btn btn-sm {{ 'btn-primary' if current_filter == key else 'btn-outline' }}"
+        class="px-3 py-1.5 rounded-lg text-[13px] transition-colors
+               {% if current_filter == key %}bg-ink text-sand-50 font-medium
+               {% else %}text-ink-tertiary hover:text-ink-secondary hover:bg-sand-200/60{% endif %}"
         hx-get="/htmx/tasks?status={{ key }}"
         hx-target="#task-grid-container"
         hx-swap="innerHTML"
         hx-push-url="/tasks?status={{ key }}"
+        onclick="document.querySelectorAll('[hx-get^=\'/htmx/tasks\']').forEach(b => {
+            b.className = 'px-3 py-1.5 rounded-lg text-[13px] transition-colors text-ink-tertiary hover:text-ink-secondary hover:bg-sand-200/60';
+        });
+        this.className = 'px-3 py-1.5 rounded-lg text-[13px] transition-colors bg-ink text-sand-50 font-medium';"
     >
         {{ label }}
     </button>

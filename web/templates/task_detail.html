@@ -1,55 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}Кастом #{{ "%03d"|format(task.id) }} - Customs Tracker{% endblock %}
+{% block title %}Кастом #{{ "%03d"|format(task.id) }} — Customs Tracker{% endblock %}
 
 {% block content %}
 <!-- Back link -->
-<div class="mb-4">
-    <a href="/tasks" class="btn btn-ghost btn-sm gap-1">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+<div class="mb-6">
+    <a href="/tasks" class="inline-flex items-center gap-1.5 text-[13px] text-ink-tertiary hover:text-ink-secondary transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
         Назад к списку
     </a>
 </div>
 
-<h1 class="text-2xl font-bold mb-6">Кастом #{{ "%03d"|format(task.id) }}</h1>
+<!-- Header -->
+<div class="flex flex-wrap items-center gap-3 mb-8">
+    <h1 class="text-ink text-[17px] font-medium font-mono tracking-[-0.01em]">Кастом #{{ "%03d"|format(task.id) }}</h1>
+    <span class="inline-flex px-2.5 py-0.5 rounded-md text-2xs font-medium {{ task.status|status_badge }}">
+        {{ task.status|status_label }}
+    </span>
+    <span class="text-[13px] text-ink-tertiary">{{ task.priority }}</span>
+</div>
 
 <!-- Task detail card -->
-<div class="card bg-base-100 shadow mb-8">
-    <div class="card-body">
-        <!-- Status + priority row -->
-        <div class="flex flex-wrap items-center gap-3 mb-4">
-            <span class="badge badge-{{ task.status|status_color }} badge-lg gap-1">
-                {{ task.status|status_emoji }} {{ task.status|status_label }}
-            </span>
-            <span class="text-lg">{{ task.priority|priority_emoji }} {{ task.priority }}</span>
-        </div>
-
-        <div class="divider my-2"></div>
-
+<div class="border border-sand-300 rounded-xl bg-white/40 mb-8">
+    <div class="p-6">
         <!-- Detail fields grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
             {% if task.task_date %}
             <div>
-                <span class="text-sm text-base-content/50">Дата заказа</span>
-                <p class="font-medium">{{ task.task_date|format_date }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Дата заказа</span>
+                <p class="text-ink text-sm mt-1">{{ task.task_date|format_date }}</p>
             </div>
             {% endif %}
 
             {% if task.fan_name %}
             <div>
-                <span class="text-sm text-base-content/50">Фан</span>
-                <p class="font-medium">{{ task.fan_name }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Фан</span>
+                <p class="text-ink text-sm mt-1">{{ task.fan_name }}</p>
             </div>
             {% endif %}
 
             {% if task.fan_link %}
             <div>
-                <span class="text-sm text-base-content/50">Ссылка</span>
-                <p>
-                    <a href="{{ task.fan_link }}" target="_blank" rel="noopener" class="link link-primary break-all">
-                        {{ task.fan_link[:60] }}{% if task.fan_link|length > 60 %}...{% endif %}
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Ссылка</span>
+                <p class="mt-1">
+                    <a href="{{ task.fan_link }}" target="_blank" rel="noopener"
+                       class="text-terra text-sm break-all hover:underline underline-offset-2">
+                        {{ task.fan_link[:60] }}{% if task.fan_link|length > 60 %}…{% endif %}
                     </a>
                 </p>
             </div>
@@ -57,70 +55,85 @@
 
             {% if task.platform %}
             <div>
-                <span class="text-sm text-base-content/50">Платформа</span>
-                <p class="font-medium">{{ task.platform|platform_label }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Платформа</span>
+                <p class="text-ink text-sm mt-1">{{ task.platform|platform_label }}</p>
             </div>
             {% endif %}
 
             <div>
-                <span class="text-sm text-base-content/50">Сумма</span>
-                <p class="font-medium">{{ task.amount_total|format_amount(task.payment_note) }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Сумма</span>
+                <p class="text-ink text-sm font-medium mt-1">{{ task.amount_total|format_amount(task.payment_note) }}</p>
             </div>
 
             {% if task.amount_paid is not none and task.amount_paid != task.amount_total %}
             <div>
-                <span class="text-sm text-base-content/50">Оплачено</span>
-                <p class="font-medium">${{ "%.0f"|format(task.amount_paid) }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Оплачено</span>
+                <p class="text-[#4a8a5c] text-sm mt-1">${{ "%.0f"|format(task.amount_paid) }}</p>
             </div>
             {% endif %}
 
             {% if task.amount_remaining is not none and task.amount_remaining > 0 %}
             <div>
-                <span class="text-sm text-base-content/50">Остаток</span>
-                <p class="font-medium text-warning">${{ "%.0f"|format(task.amount_remaining) }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Остаток</span>
+                <p class="text-[#a07830] text-sm mt-1">${{ "%.0f"|format(task.amount_remaining) }}</p>
             </div>
             {% endif %}
 
             {% if task.duration %}
             <div>
-                <span class="text-sm text-base-content/50">Длительность</span>
-                <p class="font-medium">{{ task.duration }}</p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Длительность</span>
+                <p class="text-ink text-sm mt-1">{{ task.duration }}</p>
             </div>
             {% endif %}
 
             {% if task.deadline %}
             <div>
-                <span class="text-sm text-base-content/50">Дедлайн</span>
-                <p class="font-medium">{{ task.deadline|format_date }} <span class="text-sm">({{ task.deadline|format_deadline }})</span></p>
+                <span class="text-2xs text-ink-muted uppercase tracking-wider">Дедлайн</span>
+                {% set counter = task.deadline|deadline_counter %}
+                {% if counter.show %}
+                <div class="flex items-baseline gap-2.5 mt-1">
+                    <span class="text-xl font-semibold tabular-nums font-mono {{ counter.css }}">{{ counter.number }}</span>
+                    <span class="text-sm {{ counter.css }}">{{ counter.label }}</span>
+                    <span class="text-ink-muted text-2xs ml-1">({{ task.deadline|format_date }})</span>
+                </div>
+                {% else %}
+                <p class="text-ink text-sm mt-1">
+                    {{ task.deadline|format_date }}
+                    <span class="{{ task.deadline|deadline_css }} ml-1">({{ task.deadline|deadline_text }})</span>
+                </p>
+                {% endif %}
             </div>
             {% endif %}
         </div>
 
+        <!-- Separator -->
+        <div class="h-px bg-sand-300/60 my-6"></div>
+
         <!-- Full text fields -->
         {% if task.description %}
-        <div class="mt-4">
-            <span class="text-sm text-base-content/50">Описание</span>
-            <p class="mt-1 whitespace-pre-wrap">{{ task.description }}</p>
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Описание</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.description }}</p>
         </div>
         {% endif %}
 
         {% if task.outfit %}
-        <div class="mt-4">
-            <span class="text-sm text-base-content/50">Наряд</span>
-            <p class="mt-1 whitespace-pre-wrap">{{ task.outfit }}</p>
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Наряд</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.outfit }}</p>
         </div>
         {% endif %}
 
         {% if task.notes %}
-        <div class="mt-4">
-            <span class="text-sm text-base-content/50">Заметки</span>
-            <p class="mt-1 whitespace-pre-wrap">{{ task.notes }}</p>
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Заметки</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.notes }}</p>
         </div>
         {% endif %}
 
         <!-- Metadata footer -->
-        <div class="divider my-2"></div>
-        <div class="flex flex-wrap gap-4 text-xs text-base-content/40">
+        <div class="h-px bg-sand-300/60 my-5"></div>
+        <div class="flex flex-wrap gap-4 text-2xs text-ink-muted font-mono">
             {% if task.ai_confidence is not none %}
             <span>AI: {{ "%.2f"|format(task.ai_confidence) }}</span>
             {% endif %}
@@ -132,7 +145,9 @@
 
 <!-- Audit log -->
 {% if user.role in ('admin', 'teamlead') %}
-<h2 class="text-xl font-bold mb-4">История изменений</h2>
-{% include "partials/audit_log.html" %}
+<div>
+    <h2 class="text-[15px] font-medium text-ink mb-4">История изменений</h2>
+    {% include "partials/audit_log.html" %}
+</div>
 {% endif %}
 {% endblock %}

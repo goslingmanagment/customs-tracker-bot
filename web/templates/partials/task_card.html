@@ -1,48 +1,57 @@
-<a href="/tasks/{{ task.id }}" class="card bg-base-100 shadow border-l-4 {{ task.status|status_border }} hover:shadow-md transition-shadow">
-    <div class="card-body p-4 gap-2">
+<a href="/tasks/{{ task.id }}" class="flex flex-col border border-sand-300 rounded-xl bg-white/40 hover:bg-white/70 hover:border-sand-400 transition-colors {{ task.deadline|deadline_card_css }} overflow-hidden">
+    <div class="px-5 pt-5 pb-2 flex-1">
         <!-- Header: ID + status + priority -->
-        <div class="flex justify-between items-start">
-            <span class="font-mono text-sm text-base-content/60">#{{ "%03d"|format(task.id) }}</span>
+        <div class="flex justify-between items-start mb-3">
+            <span class="font-mono text-2xs text-ink-muted">#{{ "%03d"|format(task.id) }}</span>
             <div class="flex items-center gap-2">
-                <span class="badge badge-{{ task.status|status_color }} badge-sm">
+                <span class="inline-flex px-2 py-0.5 rounded-md text-2xs font-medium {{ task.status|status_badge }}">
                     {{ task.status|status_label }}
                 </span>
-                <span>{{ task.priority|priority_emoji }}</span>
+                <span class="text-2xs text-ink-tertiary">{{ task.priority }}</span>
             </div>
         </div>
 
         <!-- Amount -->
-        <div class="font-semibold">
+        <div class="text-ink text-sm font-medium mb-1.5">
             {{ task.amount_total|format_amount(task.payment_note) }}
         </div>
 
         <!-- Description -->
         {% if task.description %}
-        <p class="text-sm text-base-content/70 line-clamp-2">
-            {{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}
+        <p class="text-[13px] text-ink-tertiary line-clamp-2">
+            {{ task.description[:80] }}{% if task.description|length > 80 %}…{% endif %}
         </p>
         {% endif %}
 
         <!-- Metadata: fan + platform -->
-        <div class="flex items-center gap-3 text-xs text-base-content/50">
+        <div class="flex items-center gap-2 text-2xs text-ink-muted">
             {% if task.fan_name %}
             <span>{{ task.fan_name }}</span>
             {% endif %}
             {% if task.platform %}
+            <span class="text-ink-faint">/</span>
             <span>{{ task.platform|platform_label }}</span>
             {% endif %}
         </div>
 
         <!-- Duration -->
         {% if task.duration %}
-        <div class="text-xs text-base-content/50">{{ task.duration }}</div>
-        {% endif %}
-
-        <!-- Deadline -->
-        {% if task.deadline %}
-        <div class="text-sm font-medium">
-            {{ task.deadline|format_deadline }}
-        </div>
+        <div class="text-2xs text-ink-muted mt-1.5">{{ task.duration }}</div>
         {% endif %}
     </div>
+
+    <!-- Deadline counter -->
+    {% if task.deadline %}
+    {% set counter = task.deadline|deadline_counter %}
+    {% if counter.show %}
+    <div class="border-t border-sand-200 px-5 py-3 flex items-center gap-3">
+        <span class="text-xl font-semibold tabular-nums font-mono {{ counter.css }}">{{ counter.number }}</span>
+        <span class="text-[13px] {{ counter.css }}">{{ counter.label }}</span>
+    </div>
+    {% else %}
+    <div class="border-t border-sand-200 px-5 py-2.5">
+        <span class="text-[13px] {{ task.deadline|deadline_css }}">{{ task.deadline|deadline_text }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
 </a>

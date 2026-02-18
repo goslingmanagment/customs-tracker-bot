@@ -1,52 +1,110 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="corporate">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Customs Tracker{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/htmx.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sand: {
+                            50:  '#faf9f5',
+                            100: '#f5f3ec',
+                            200: '#ebe8dd',
+                            300: '#ddd8c8',
+                            400: '#c4bda8',
+                        },
+                        ink: {
+                            DEFAULT: '#1a1815',
+                            secondary: '#4a4740',
+                            tertiary: '#7a766d',
+                            muted: '#a09b90',
+                            faint: '#c8c4b8',
+                        },
+                        terra: {
+                            DEFAULT: '#c4704a',
+                            light: '#d4885e',
+                            muted: 'rgba(196,112,74,0.08)',
+                            border: 'rgba(196,112,74,0.20)',
+                        },
+                        status: {
+                            gray:   { fg: '#78756c', bg: 'rgba(120,117,108,0.07)' },
+                            blue:   { fg: '#4a7fb5', bg: 'rgba(74,127,181,0.07)' },
+                            amber:  { fg: '#a07830', bg: 'rgba(160,120,48,0.07)' },
+                            purple: { fg: '#7c6a9b', bg: 'rgba(124,106,155,0.07)' },
+                            green:  { fg: '#4a8a5c', bg: 'rgba(74,138,92,0.07)' },
+                            red:    { fg: '#b5564e', bg: 'rgba(181,86,78,0.07)' },
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['"DM Mono"', '"SF Mono"', 'Menlo', 'monospace'],
+                    },
+                    fontSize: {
+                        '2xs': ['0.6875rem', '1rem'],
+                    },
+                }
+            }
+        }
+    </script>
     <style>
+        body {
+            background: #faf9f5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ddd8c8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c4bda8; }
         .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request .htmx-indicator,
         .htmx-request.htmx-indicator { display: inline-block; }
     </style>
 </head>
-<body class="min-h-screen bg-base-200">
+<body class="min-h-screen text-ink-secondary">
     {% if user is defined and user %}
-    <div class="navbar bg-base-100 shadow-md px-4">
-        <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl font-bold">Customs Tracker</a>
-        </div>
-        <div class="navbar-center hidden md:flex">
-            <ul class="menu menu-horizontal px-1 gap-1">
-                <li>
+    <nav class="sticky top-0 z-50 bg-sand-50/85 backdrop-blur-md border-b border-sand-300/60">
+        <div class="max-w-[1120px] mx-auto px-6 h-[52px] flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <a href="/" class="text-ink text-[15px] font-medium tracking-[-0.01em]">Customs Tracker</a>
+                <div class="flex items-center gap-1">
                     <a href="/tasks"
-                       class="{% if active_page == 'tasks' %}active{% endif %}">
+                       class="px-3 py-1.5 rounded-md text-[13px] transition-colors
+                              {% if active_page == 'tasks' %}text-ink bg-sand-200/70 font-medium{% else %}text-ink-tertiary hover:text-ink-secondary hover:bg-sand-100{% endif %}">
                         Задачи
                     </a>
-                </li>
-                {% if user.role in ('admin', 'teamlead') %}
-                <li>
+                    {% if user.role in ('admin', 'teamlead') %}
                     <a href="/stats"
-                       class="{% if active_page == 'stats' %}active{% endif %}">
+                       class="px-3 py-1.5 rounded-md text-[13px] transition-colors
+                              {% if active_page == 'stats' %}text-ink bg-sand-200/70 font-medium{% else %}text-ink-tertiary hover:text-ink-secondary hover:bg-sand-100{% endif %}">
                         Статистика
                     </a>
-                </li>
-                {% endif %}
-            </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span class="text-2xs text-ink-muted font-mono tracking-wide uppercase">{{ user.role }}</span>
+                <div class="w-px h-4 bg-sand-300"></div>
+                <form method="post" action="/logout" class="inline">
+                    <button type="submit" class="text-2xs text-ink-muted hover:text-ink-secondary transition-colors">
+                        Выйти
+                    </button>
+                </form>
+            </div>
         </div>
-        <div class="navbar-end gap-2">
-            <span class="badge badge-outline">{{ user.role }}</span>
-            <form method="post" action="/logout" class="inline">
-                <button type="submit" class="btn btn-ghost btn-sm">Выйти</button>
-            </form>
-        </div>
-    </div>
+    </nav>
     {% endif %}
 
-    <main class="container mx-auto px-4 py-6 max-w-7xl">
+    <main class="max-w-[1120px] mx-auto px-6 py-8">
         {% block content %}{% endblock %}
     </main>
 </body>
