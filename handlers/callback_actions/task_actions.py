@@ -23,6 +23,10 @@ async def action_confirm_brief(callback, task, session, user, user_name, user_di
             changed_by_id=user.id, changed_by_name=user_name,
         )
     except InvalidTransitionError:
+        if task.status == "awaiting_confirmation":
+            await refresh_card(callback, task)
+            await callback.answer("Бриф уже подтверждён ✅")
+            return
         await callback.answer(f"Переход недоступен: {task.status} → awaiting_confirmation")
         return
     if not await commit_session_safely(
@@ -53,6 +57,10 @@ async def action_take(callback, task, session, user, user_name, user_display):
             changed_by_id=user.id, changed_by_name=user_name,
         )
     except InvalidTransitionError:
+        if task.status == "processing":
+            await refresh_card(callback, task)
+            await callback.answer("Кастом уже в работе 🎬")
+            return
         await callback.answer(f"Переход недоступен: {task.status} → processing")
         return
     if not await commit_session_safely(
@@ -82,6 +90,10 @@ async def action_finish(callback, task, session, user, user_name, user_display):
             changed_by_id=user.id, changed_by_name=user_name,
         )
     except InvalidTransitionError:
+        if task.status == "finished":
+            await refresh_card(callback, task)
+            await callback.answer("Кастом уже отмечен как отснятый 📹")
+            return
         await callback.answer(f"Переход недоступен: {task.status} → finished")
         return
     if not await commit_session_safely(
@@ -110,6 +122,10 @@ async def action_delivered(callback, task, session, user, user_name, user_displa
             changed_by_id=user.id, changed_by_name=user_name,
         )
     except InvalidTransitionError:
+        if task.status == "delivered":
+            await refresh_card(callback, task)
+            await callback.answer("Кастом уже отмечен как доставленный ✔️")
+            return
         await callback.answer(f"Переход недоступен: {task.status} → delivered")
         return
     if not await commit_session_safely(

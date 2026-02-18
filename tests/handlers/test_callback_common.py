@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from handlers.callback_actions import common
-from tests.fakes import FakeCallbackQuery, FakeTask, make_user
+from tests.fakes import FakeCallbackQuery, FakeMessage, FakeTask, make_user
 
 
 def test_parse_callback_and_denied_messages():
@@ -37,7 +37,41 @@ def test_delete_confirmation_ttl_lifecycle(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_refresh_card_uses_task_message_and_handles_errors(monkeypatch):
+async def test_refresh_card_updates_quick_open_and_canonical_cards(monkeypatch):
+    cb_message = FakeMessage(message_id=321)
+    cb = FakeCallbackQuery(
+        data="task:1:open",
+        from_user=make_user(),
+        message=cb_message,
+    )
+    task = FakeTask(id=1, bot_message_id=700)
+
+    monkeypatch.setattr(common, "get_card_for_status", lambda _task: ("card", None))
+
+    ok = await common.refresh_card(cb, task)
+    assert ok is True
+    assert [item["message_id"] for item in cb.bot.edited_texts] == [321, 700]
+
+
+@pytest.mark.asyncio
+async def test_refresh_card_updates_only_once_for_same_message_id(monkeypatch):
+    cb_message = FakeMessage(message_id=700)
+    cb = FakeCallbackQuery(
+        data="task:1:open",
+        from_user=make_user(),
+        message=cb_message,
+    )
+    task = FakeTask(id=1, bot_message_id=700)
+
+    monkeypatch.setattr(common, "get_card_for_status", lambda _task: ("card", None))
+
+    ok = await common.refresh_card(cb, task)
+    assert ok is True
+    assert [item["message_id"] for item in cb.bot.edited_texts] == [700]
+
+
+@pytest.mark.asyncio
+async def test_refresh_card_fallbacks_to_canonical_when_no_callback_message(monkeypatch):
     cb = FakeCallbackQuery(data="task:1:open", from_user=make_user())
     task = FakeTask(id=1, bot_message_id=700)
 
@@ -45,6 +79,35 @@ async def test_refresh_card_uses_task_message_and_handles_errors(monkeypatch):
 
     ok = await common.refresh_card(cb, task)
     assert ok is True
+    assert [item["message_id"] for item in cb.bot.edited_texts] == [700]
+
+
+@pytest.mark.asyncio
+async def test_refresh_card_treats_not_modified_as_success(monkeypatch):
+    cb_message = FakeMessage(message_id=700)
+    cb = FakeCallbackQuery(
+        data="task:1:open",
+        from_user=make_user(),
+        message=cb_message,
+    )
+    task = FakeTask(id=1, bot_message_id=700)
+
+    monkeypatch.setattr(common, "get_card_for_status", lambda _task: ("card", None))
+
+    async def _not_modified(*_args, **_kwargs):
+        raise RuntimeError("Bad Request: message is not modified")
+
+    monkeypatch.setattr(cb.bot, "edit_message_text", _not_modified)
+    ok = await common.refresh_card(cb, task)
+    assert ok is True
+
+
+@pytest.mark.asyncio
+async def test_refresh_card_returns_false_on_edit_errors(monkeypatch):
+    cb = FakeCallbackQuery(data="task:1:open", from_user=make_user())
+    task = FakeTask(id=1, bot_message_id=700)
+
+    monkeypatch.setattr(common, "get_card_for_status", lambda _task: ("card", None))
 
     async def _fail(*_args, **_kwargs):
         raise RuntimeError("boom")

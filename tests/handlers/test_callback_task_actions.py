@@ -62,6 +62,29 @@ async def test_action_take_invalid_transition(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_action_take_same_status_refreshes_and_answers_friendly(monkeypatch):
+    cb = FakeCallbackQuery(data="task:3:take")
+    task = FakeTask(id=3, status="processing")
+    session = _Session()
+    refreshed = {"called": 0}
+
+    async def _update(*_args, **_kwargs):
+        raise InvalidTransitionError("processing", "processing", [])
+
+    async def _refresh(*_args, **_kwargs):
+        refreshed["called"] += 1
+        return True
+
+    monkeypatch.setattr(task_actions.task_repo, "update_task_status", _update)
+    monkeypatch.setattr(task_actions, "refresh_card", _refresh)
+
+    await task_actions.action_take(cb, task, session, cb.from_user, "u", "@u")
+
+    assert refreshed["called"] == 1
+    assert cb.answers and "уже в работе" in cb.answers[0][0].lower()
+
+
+@pytest.mark.asyncio
 async def test_action_deny_shot_handles_delete_failure(monkeypatch):
     cb = FakeCallbackQuery(data="task:3:deny_shot")
     task = FakeTask(id=3)

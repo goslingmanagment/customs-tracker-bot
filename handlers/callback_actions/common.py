@@ -211,20 +211,48 @@ async def safe_delete_message(callback: CallbackQuery, task_id: int) -> bool:
 
 async def refresh_card(callback: CallbackQuery, task: Task) -> bool:
     text, keyboard = get_card_for_status(task)
-    target_message_id = task.bot_message_id
-    if target_message_id is None and callback.message:
-        target_message_id = callback.message.message_id
-    if target_message_id is None:
+    target_message_ids: list[int] = []
+    if callback.message:
+        target_message_ids.append(callback.message.message_id)
+    if task.bot_message_id is not None:
+        target_message_ids.append(task.bot_message_id)
+
+    # Keep original priority (clicked card first), but avoid duplicate edits.
+    deduped_targets: list[int] = []
+    seen: set[int] = set()
+    for message_id in target_message_ids:
+        if message_id in seen:
+            continue
+        seen.add(message_id)
+        deduped_targets.append(message_id)
+
+    if not deduped_targets:
         logger.error("task_card_message_missing", task_id=task.id)
         return False
-    try:
-        await callback.bot.edit_message_text(
-            text,
-            chat_id=task.chat_id,
-            message_id=target_message_id,
-            reply_markup=keyboard,
-        )
-        return True
-    except Exception as exc:
-        logger.error("card_update_failed", task_id=task.id, error=str(exc))
-        return False
+
+    expected_primary_target = deduped_targets[0]
+    refreshed_primary_target = False
+    for target_message_id in deduped_targets:
+        try:
+            await callback.bot.edit_message_text(
+                text,
+                chat_id=task.chat_id,
+                message_id=target_message_id,
+                reply_markup=keyboard,
+            )
+            if target_message_id == expected_primary_target:
+                refreshed_primary_target = True
+        except Exception as exc:
+            error_text = str(exc)
+            # Telegram returns "message is not modified" when content/markup matches.
+            if "message is not modified" in error_text.lower():
+                if target_message_id == expected_primary_target:
+                    refreshed_primary_target = True
+                continue
+            logger.error(
+                "card_update_failed",
+                task_id=task.id,
+                message_id=target_message_id,
+                error=error_text,
+            )
+    return refreshed_primary_target
