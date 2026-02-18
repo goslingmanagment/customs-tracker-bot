@@ -43,6 +43,9 @@ flowchart LR
 - `pydantic-settings` for `.env` loading
 - `structlog` for structured logging
 - `pytest` + `pytest-asyncio` for tests
+- FastAPI + Jinja2 + HTMX (optional web dashboard)
+- Tailwind CSS + DaisyUI (CDN)
+- `itsdangerous` (signed session cookies)
 
 ## Repository Structure
 
@@ -56,6 +59,7 @@ flowchart LR
 - `ui/`: card text + inline keyboard builders and formatting utilities.
 - `diagnostics/`: readiness checks and startup error builder.
 - `alembic/`: migration environment and schema revisions.
+- `web/`: optional web dashboard (FastAPI app, templates, routes, auth, static assets).
 - `tests/`: targeted behavior tests for readiness gates, reply keyword detection, postpone cleanup, and settings behavior.
 
 ## Data Model
@@ -321,6 +325,57 @@ Current tests cover:
 - settings timezone lock and confidence update flow
 - postpone prompt markup cleanup on timeout/success
 - reply keyword detection for "shot" reports
+
+## Web Dashboard
+
+An optional read-only web dashboard for monitoring tasks, viewing stats, and browsing audit logs — without opening Telegram.
+
+### Enabling the Web Dashboard
+
+Add the following to your `.env`:
+
+```
+WEB_ENABLED=true
+WEB_SECRET_KEY=your-random-secret-string
+WEB_ADMIN_CODE=admin-code-word
+WEB_MODEL_CODE=model-code-word
+WEB_TEAMLEAD_CODE=teamlead-code-word
+```
+
+The web server starts alongside the bot as an asyncio task when `WEB_ENABLED=true` and `WEB_SECRET_KEY` is set. By default it listens on `127.0.0.1:8080`.
+
+### Authentication
+
+Each role has a shared code-word. Users enter the code-word on the login page to get a signed session cookie. No usernames or passwords.
+
+| Env var | Description |
+|---|---|
+| `WEB_SECRET_KEY` | Secret for signing session cookies (required) |
+| `WEB_ADMIN_CODE` | Code-word for admin access |
+| `WEB_MODEL_CODE` | Code-word for model access |
+| `WEB_TEAMLEAD_CODE` | Code-word for teamlead access |
+| `WEB_HOST` | Bind address (default: `127.0.0.1`) |
+| `WEB_PORT` | Port (default: `8080`) |
+| `WEB_COOKIE_TTL_DAYS` | Session cookie lifetime in days (default: `7`) |
+| `WEB_COOKIE_SECURE` | Set `true` if behind HTTPS reverse proxy (default: `false`) |
+
+### Pages
+
+- **Dashboard** (`/`) — stat counters, overdue tasks, upcoming deadlines, recent updates
+- **Task List** (`/tasks`) — filterable card grid with status tabs (HTMX partial updates)
+- **Task Detail** (`/tasks/{id}`) — full task info + audit log timeline (admin/teamlead only see audit log)
+- **Stats** (`/stats`) — monthly analytics with platform breakdown (admin/teamlead only)
+
+### Tech Stack
+
+- FastAPI + Jinja2 (server-rendered)
+- HTMX for partial page updates
+- Tailwind CSS + DaisyUI (CDN) for styling
+- Same SQLite database as the bot (shared process, no cross-process issues)
+
+### External Access
+
+For access outside localhost, set up a reverse proxy (nginx/caddy) and set `WEB_COOKIE_SECURE=true`.
 
 ## Development Notes and Constraints
 

@@ -16,6 +16,17 @@ class EnvConfig(BaseSettings):
     db_path: str = "data/customs.db"
     log_level: str = "INFO"
 
+    # Web dashboard
+    web_enabled: bool = False
+    web_host: str = "127.0.0.1"
+    web_port: int = 8080
+    web_secret_key: str = ""
+    web_admin_code: str = ""
+    web_model_code: str = ""
+    web_teamlead_code: str = ""
+    web_cookie_ttl_days: int = 7
+    web_cookie_secure: bool = False
+
 
 @dataclass
 class RuntimeConfig:

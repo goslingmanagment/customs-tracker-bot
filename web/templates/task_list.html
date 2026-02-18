@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Задачи - Customs Tracker{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Задачи</h1>
+
+<!-- Filter tabs -->
+<div class="flex flex-wrap gap-2 mb-6">
+    {% set filters = [
+        ("active", "Активные"),
+        ("all", "Все"),
+        ("draft", "Черновик"),
+        ("awaiting_confirmation", "Ожидает"),
+        ("processing", "В работе"),
+        ("finished", "Отснято"),
+        ("delivered", "Выполнено"),
+        ("cancelled", "Отменено"),
+        ("overdue", "Просроченные"),
+    ] %}
+    {% for key, label in filters %}
+    <button
+        class="btn btn-sm {{ 'btn-primary' if current_filter == key else 'btn-outline' }}"
+        hx-get="/htmx/tasks?status={{ key }}"
+        hx-target="#task-grid-container"
+        hx-swap="innerHTML"
+        hx-push-url="/tasks?status={{ key }}"
+    >
+        {{ label }}
+    </button>
+    {% endfor %}
+</div>
+
+<!-- Task grid -->
+<div id="task-grid-container">
+    {% include "partials/task_grid.html" %}
+</div>
+{% endblock %}

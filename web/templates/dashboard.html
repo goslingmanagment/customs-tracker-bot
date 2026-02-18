@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд - Customs Tracker{% endblock %}
+
+{% block content %}
+<!-- Stat counters -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <a href="/tasks?status=active" class="stat bg-base-100 shadow rounded-box hover:shadow-md transition-shadow">
+        <div class="stat-title">Активных</div>
+        <div class="stat-value">{{ active_count }}</div>
+    </a>
+    <a href="/tasks?status=overdue" class="stat bg-base-100 shadow rounded-box hover:shadow-md transition-shadow {{ 'text-error' if overdue_count > 0 }}">
+        <div class="stat-title">Просрочено</div>
+        <div class="stat-value {{ 'text-error' if overdue_count > 0 }}">{{ overdue_count }}</div>
+    </a>
+    <a href="/tasks?status=processing" class="stat bg-base-100 shadow rounded-box hover:shadow-md transition-shadow">
+        <div class="stat-title">В работе</div>
+        <div class="stat-value">{{ processing_count }}</div>
+    </a>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">За месяц</div>
+        <div class="stat-value text-lg">${{ "%.0f"|format(month_amount) }}</div>
+    </div>
+</div>
+
+<!-- Overdue tasks -->
+{% if overdue_tasks %}
+<div class="mb-8">
+    <h2 class="text-xl font-bold mb-4 text-error flex items-center gap-2">
+        <span>Просроченные</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for task in overdue_tasks %}
+        <a href="/tasks/{{ task.id }}" class="card bg-base-100 shadow border-l-4 border-error hover:shadow-md transition-shadow">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-start">
+                    <span class="font-mono text-sm text-base-content/60">#{{ "%03d"|format(task.id) }}</span>
+                    <span>{{ task.priority|priority_emoji }}</span>
+                </div>
+                <div class="font-semibold">
+                    {{ task.amount_total|format_amount(task.payment_note) }}
+                </div>
+                {% if task.description %}
+                <p class="text-sm text-base-content/70 line-clamp-2">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>
+                {% endif %}
+                <div class="text-sm text-error font-medium">
+                    {{ task.deadline|format_overdue }}
+                </div>
+                {% if task.fan_name %}
+                <div class="text-xs text-base-content/50">{{ task.fan_name }}</div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Due soon tasks -->
+{% if due_soon_tasks %}
+<div class="mb-8">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <span>Ближайшие дедлайны</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for task in due_soon_tasks %}
+        <a href="/tasks/{{ task.id }}" class="card bg-base-100 shadow border-l-4 {{ task.status|status_border }} hover:shadow-md transition-shadow">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-start">
+                    <span class="font-mono text-sm text-base-content/60">#{{ "%03d"|format(task.id) }}</span>
+                    <span class="badge badge-{{ task.status|status_color }} badge-sm">
+                        {{ task.status|status_label }}
+                    </span>
+                </div>
+                <div class="font-semibold">
+                    {{ task.amount_total|format_amount(task.payment_note) }}
+                </div>
+                {% if task.description %}
+                <p class="text-sm text-base-content/70 line-clamp-2">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>
+                {% endif %}
+                <div class="text-sm font-medium">
+                    {{ task.deadline|format_deadline }}
+                </div>
+                {% if task.fan_name %}
+                <div class="text-xs text-base-content/50">{{ task.fan_name }}</div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent tasks -->
+{% if recent_tasks %}
+<div class="mb-8">
+    <h2 class="text-xl font-bold mb-4">Последние обновления</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for task in recent_tasks %}
+        <a href="/tasks/{{ task.id }}" class="card bg-base-100 shadow border-l-4 {{ task.status|status_border }} hover:shadow-md transition-shadow">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-start">
+                    <span class="font-mono text-sm text-base-content/60">#{{ "%03d"|format(task.id) }}</span>
+                    <span class="badge badge-{{ task.status|status_color }} badge-sm">
+                        {{ task.status|status_label }}
+                    </span>
+                </div>
+                <div class="font-semibold">
+                    {{ task.amount_total|format_amount(task.payment_note) }}
+                </div>
+                {% if task.description %}
+                <p class="text-sm text-base-content/70 line-clamp-2">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>
+                {% endif %}
+                <div class="text-sm">
+                    {{ task.deadline|format_deadline }}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not active_count %}
+<div class="flex flex-col items-center justify-center min-h-[30vh]">
+    <p class="text-xl text-base-content/40">Нет активных задач</p>
+</div>
+{% endif %}
+{% endblock %}

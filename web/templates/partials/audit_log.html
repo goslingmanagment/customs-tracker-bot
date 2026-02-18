@@ -1,0 +1,45 @@
+{% if logs %}
+<div class="card bg-base-100 shadow">
+    <div class="card-body p-4">
+        <ul class="timeline timeline-vertical timeline-compact">
+            {% for log in logs %}
+            <li>
+                {% if not loop.first %}
+                <hr />
+                {% endif %}
+                <div class="timeline-start text-xs text-base-content/50 whitespace-nowrap">
+                    {{ log.created_at|format_datetime }}
+                </div>
+                <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-primary">
+                        <circle cx="10" cy="10" r="5" />
+                    </svg>
+                </div>
+                <div class="timeline-end timeline-box">
+                    <div class="text-sm">
+                        {% if log.from_status %}
+                        <span class="badge badge-{{ log.from_status|status_color }} badge-xs">{{ log.from_status|status_label }}</span>
+                        <span class="mx-1">&rarr;</span>
+                        {% else %}
+                        <span class="text-base-content/50">создано &rarr;</span>
+                        {% endif %}
+                        <span class="badge badge-{{ log.to_status|status_color }} badge-xs">{{ log.to_status|status_label }}</span>
+                    </div>
+                    {% if log.changed_by_name %}
+                    <div class="text-xs text-base-content/50 mt-1">{{ log.changed_by_name }}</div>
+                    {% endif %}
+                    {% if log.note %}
+                    <div class="text-xs text-base-content/60 mt-1 italic">{{ log.note }}</div>
+                    {% endif %}
+                </div>
+                {% if not loop.last %}
+                <hr />
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% else %}
+<div class="text-base-content/40 text-center py-4">Нет записей</div>
+{% endif %}

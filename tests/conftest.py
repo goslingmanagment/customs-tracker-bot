@@ -18,6 +18,15 @@ def _reset_global_singletons():
         "anthropic_api_key": env.anthropic_api_key,
         "db_path": env.db_path,
         "log_level": env.log_level,
+        "web_enabled": env.web_enabled,
+        "web_host": env.web_host,
+        "web_port": env.web_port,
+        "web_secret_key": env.web_secret_key,
+        "web_admin_code": env.web_admin_code,
+        "web_model_code": env.web_model_code,
+        "web_teamlead_code": env.web_teamlead_code,
+        "web_cookie_ttl_days": env.web_cookie_ttl_days,
+        "web_cookie_secure": env.web_cookie_secure,
     }
     runtime_snapshot = asdict(runtime)
     roles_snapshot = asdict(roles)
@@ -28,6 +37,15 @@ def _reset_global_singletons():
     env.anthropic_api_key = env_snapshot["anthropic_api_key"]
     env.db_path = env_snapshot["db_path"]
     env.log_level = env_snapshot["log_level"]
+    env.web_enabled = env_snapshot["web_enabled"]
+    env.web_host = env_snapshot["web_host"]
+    env.web_port = env_snapshot["web_port"]
+    env.web_secret_key = env_snapshot["web_secret_key"]
+    env.web_admin_code = env_snapshot["web_admin_code"]
+    env.web_model_code = env_snapshot["web_model_code"]
+    env.web_teamlead_code = env_snapshot["web_teamlead_code"]
+    env.web_cookie_ttl_days = env_snapshot["web_cookie_ttl_days"]
+    env.web_cookie_secure = env_snapshot["web_cookie_secure"]
 
     runtime.customs_chat_id = runtime_snapshot["customs_chat_id"]
     runtime.customs_topic_id = runtime_snapshot["customs_topic_id"]

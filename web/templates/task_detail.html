@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Кастом #{{ "%03d"|format(task.id) }} - Customs Tracker{% endblock %}
+
+{% block content %}
+<!-- Back link -->
+<div class="mb-4">
+    <a href="/tasks" class="btn btn-ghost btn-sm gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Назад к списку
+    </a>
+</div>
+
+<h1 class="text-2xl font-bold mb-6">Кастом #{{ "%03d"|format(task.id) }}</h1>
+
+<!-- Task detail card -->
+<div class="card bg-base-100 shadow mb-8">
+    <div class="card-body">
+        <!-- Status + priority row -->
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+            <span class="badge badge-{{ task.status|status_color }} badge-lg gap-1">
+                {{ task.status|status_emoji }} {{ task.status|status_label }}
+            </span>
+            <span class="text-lg">{{ task.priority|priority_emoji }} {{ task.priority }}</span>
+        </div>
+
+        <div class="divider my-2"></div>
+
+        <!-- Detail fields grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+            {% if task.task_date %}
+            <div>
+                <span class="text-sm text-base-content/50">Дата заказа</span>
+                <p class="font-medium">{{ task.task_date|format_date }}</p>
+            </div>
+            {% endif %}
+
+            {% if task.fan_name %}
+            <div>
+                <span class="text-sm text-base-content/50">Фан</span>
+                <p class="font-medium">{{ task.fan_name }}</p>
+            </div>
+            {% endif %}
+
+            {% if task.fan_link %}
+            <div>
+                <span class="text-sm text-base-content/50">Ссылка</span>
+                <p>
+                    <a href="{{ task.fan_link }}" target="_blank" rel="noopener" class="link link-primary break-all">
+                        {{ task.fan_link[:60] }}{% if task.fan_link|length > 60 %}...{% endif %}
+                    </a>
+                </p>
+            </div>
+            {% endif %}
+
+            {% if task.platform %}
+            <div>
+                <span class="text-sm text-base-content/50">Платформа</span>
+                <p class="font-medium">{{ task.platform|platform_label }}</p>
+            </div>
+            {% endif %}
+
+            <div>
+                <span class="text-sm text-base-content/50">Сумма</span>
+                <p class="font-medium">{{ task.amount_total|format_amount(task.payment_note) }}</p>
+            </div>
+
+            {% if task.amount_paid is not none and task.amount_paid != task.amount_total %}
+            <div>
+                <span class="text-sm text-base-content/50">Оплачено</span>
+                <p class="font-medium">${{ "%.0f"|format(task.amount_paid) }}</p>
+            </div>
+            {% endif %}
+
+            {% if task.amount_remaining is not none and task.amount_remaining > 0 %}
+            <div>
+                <span class="text-sm text-base-content/50">Остаток</span>
+                <p class="font-medium text-warning">${{ "%.0f"|format(task.amount_remaining) }}</p>
+            </div>
+            {% endif %}
+
+            {% if task.duration %}
+            <div>
+                <span class="text-sm text-base-content/50">Длительность</span>
+                <p class="font-medium">{{ task.duration }}</p>
+            </div>
+            {% endif %}
+
+            {% if task.deadline %}
+            <div>
+                <span class="text-sm text-base-content/50">Дедлайн</span>
+                <p class="font-medium">{{ task.deadline|format_date }} <span class="text-sm">({{ task.deadline|format_deadline }})</span></p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Full text fields -->
+        {% if task.description %}
+        <div class="mt-4">
+            <span class="text-sm text-base-content/50">Описание</span>
+            <p class="mt-1 whitespace-pre-wrap">{{ task.description }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.outfit %}
+        <div class="mt-4">
+            <span class="text-sm text-base-content/50">Наряд</span>
+            <p class="mt-1 whitespace-pre-wrap">{{ task.outfit }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.notes %}
+        <div class="mt-4">
+            <span class="text-sm text-base-content/50">Заметки</span>
+            <p class="mt-1 whitespace-pre-wrap">{{ task.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Metadata footer -->
+        <div class="divider my-2"></div>
+        <div class="flex flex-wrap gap-4 text-xs text-base-content/40">
+            {% if task.ai_confidence is not none %}
+            <span>AI: {{ "%.2f"|format(task.ai_confidence) }}</span>
+            {% endif %}
+            <span>Создано: {{ task.created_at|format_datetime }}</span>
+            <span>Обновлено: {{ task.updated_at|format_datetime }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Audit log -->
+{% if user.role in ('admin', 'teamlead') %}
+<h2 class="text-xl font-bold mb-4">История изменений</h2>
+{% include "partials/audit_log.html" %}
+{% endif %}
+{% endblock %}

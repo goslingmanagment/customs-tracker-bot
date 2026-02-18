@@ -6,6 +6,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.constants import VALID_TRANSITIONS
 from core.exceptions import InvalidTransitionError
@@ -320,3 +321,28 @@ async def get_finished_tasks_older_than_hours(
         if finished_at <= cutoff:
             overdue.append(task)
     return overdue
+
+
+async def get_task_with_logs(
+    session: AsyncSession, task_id: int
+) -> Task | None:
+    """Get task with eagerly loaded status_logs (avoids async lazy-load)."""
+    result = await session.execute(
+        select(Task)
+        .where(Task.id == task_id)
+        .options(selectinload(Task.status_logs))
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_recent_tasks(
+    session: AsyncSession, limit: int = 5
+) -> list[Task]:
+    """Get recently updated active tasks for dashboard."""
+    result = await session.execute(
+        select(Task)
+        .where(Task.status.notin_(["delivered", "cancelled"]))
+        .order_by(Task.updated_at.desc())
+        .limit(limit)
+    )
+    return list(result.scalars().all())

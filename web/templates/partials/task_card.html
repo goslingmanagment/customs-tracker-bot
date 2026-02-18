@@ -1,0 +1,48 @@
+<a href="/tasks/{{ task.id }}" class="card bg-base-100 shadow border-l-4 {{ task.status|status_border }} hover:shadow-md transition-shadow">
+    <div class="card-body p-4 gap-2">
+        <!-- Header: ID + status + priority -->
+        <div class="flex justify-between items-start">
+            <span class="font-mono text-sm text-base-content/60">#{{ "%03d"|format(task.id) }}</span>
+            <div class="flex items-center gap-2">
+                <span class="badge badge-{{ task.status|status_color }} badge-sm">
+                    {{ task.status|status_label }}
+                </span>
+                <span>{{ task.priority|priority_emoji }}</span>
+            </div>
+        </div>
+
+        <!-- Amount -->
+        <div class="font-semibold">
+            {{ task.amount_total|format_amount(task.payment_note) }}
+        </div>
+
+        <!-- Description -->
+        {% if task.description %}
+        <p class="text-sm text-base-content/70 line-clamp-2">
+            {{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}
+        </p>
+        {% endif %}
+
+        <!-- Metadata: fan + platform -->
+        <div class="flex items-center gap-3 text-xs text-base-content/50">
+            {% if task.fan_name %}
+            <span>{{ task.fan_name }}</span>
+            {% endif %}
+            {% if task.platform %}
+            <span>{{ task.platform|platform_label }}</span>
+            {% endif %}
+        </div>
+
+        <!-- Duration -->
+        {% if task.duration %}
+        <div class="text-xs text-base-content/50">{{ task.duration }}</div>
+        {% endif %}
+
+        <!-- Deadline -->
+        {% if task.deadline %}
+        <div class="text-sm font-medium">
+            {{ task.deadline|format_deadline }}
+        </div>
+        {% endif %}
+    </div>
+</a>

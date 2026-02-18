@@ -116,15 +116,30 @@ async def main() -> None:
 
     scheduler_task = asyncio.create_task(start_scheduler(bot))
 
+    # Conditionally start web server
+    web_server = None
+    web_task = None
+    if env.web_enabled and env.web_secret_key:
+        from web.server import create_web_server
+
+        web_server, web_task = await create_web_server()
+    elif env.web_enabled and not env.web_secret_key:
+        logger.warning("web_server_skipped", reason="WEB_SECRET_KEY is not set")
+
     logger.info(
         "bot_starting",
         chat_id=runtime.customs_chat_id,
         topic_id=runtime.customs_topic_id,
+        web_enabled=env.web_enabled and bool(env.web_secret_key),
     )
 
     try:
         await dp.start_polling(bot)
     finally:
+        if web_server:
+            web_server.should_exit = True
+        if web_task:
+            await web_task
         scheduler_task.cancel()
         logger.info("bot_stopped")
 

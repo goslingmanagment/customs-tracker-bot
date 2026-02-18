@@ -1,0 +1,93 @@
+<!-- Month navigation -->
+<div class="flex items-center justify-center gap-4 mb-6">
+    <button
+        class="btn btn-ghost btn-sm"
+        hx-get="/htmx/stats/{{ prev_year }}/{{ prev_month }}"
+        hx-target="#stats-content"
+        hx-swap="innerHTML"
+    >
+        &larr; Пред.
+    </button>
+    <span class="text-lg font-bold">{{ month|month_name }} {{ year }}</span>
+    {% if not is_current_month %}
+    <button
+        class="btn btn-ghost btn-sm"
+        hx-get="/htmx/stats/{{ next_year }}/{{ next_month }}"
+        hx-target="#stats-content"
+        hx-swap="innerHTML"
+    >
+        След. &rarr;
+    </button>
+    {% else %}
+    <button class="btn btn-ghost btn-sm btn-disabled" disabled>
+        След. &rarr;
+    </button>
+    {% endif %}
+</div>
+
+<!-- Stat counters -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Всего</div>
+        <div class="stat-value">{{ stats.total }}</div>
+    </div>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Выполнено</div>
+        <div class="stat-value text-success">{{ stats.completed }}</div>
+    </div>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">В процессе</div>
+        <div class="stat-value">{{ stats.in_progress + stats.finished }}</div>
+    </div>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Отменено</div>
+        <div class="stat-value text-error">{{ stats.cancelled }}</div>
+    </div>
+</div>
+
+<!-- Amounts -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Общая сумма</div>
+        <div class="stat-value text-lg">${{ "%.0f"|format(stats.total_amount) }}</div>
+    </div>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Средняя сумма</div>
+        <div class="stat-value text-lg">${{ "%.0f"|format(stats.avg_amount) }}</div>
+    </div>
+    <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">Просрочено</div>
+        <div class="stat-value text-lg {{ 'text-error' if stats.overdue > 0 }}">{{ stats.overdue }}</div>
+    </div>
+</div>
+
+<!-- Platforms -->
+{% if stats.platforms %}
+<h3 class="text-lg font-bold mb-3">Платформы</h3>
+<div class="overflow-x-auto">
+    <table class="table bg-base-100 shadow rounded-box">
+        <thead>
+            <tr>
+                <th>Платформа</th>
+                <th>Заказов</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, data in stats.platforms.items() %}
+            <tr>
+                <td class="font-medium">{{ name|platform_label }}</td>
+                <td>{{ data.count }}</td>
+                <td>${{ "%.0f"|format(data.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if stats.total == 0 %}
+<div class="flex flex-col items-center justify-center min-h-[20vh]">
+    <p class="text-lg text-base-content/40">Нет данных за этот месяц</p>
+</div>
+{% endif %}
