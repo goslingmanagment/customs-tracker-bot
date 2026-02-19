@@ -43,6 +43,9 @@ class Task(Base):
     description: Mapped[str | None] = mapped_column(Text)
     outfit: Mapped[str | None] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text)
+    description_original: Mapped[str | None] = mapped_column(Text)
+    outfit_original: Mapped[str | None] = mapped_column(Text)
+    notes_original: Mapped[str | None] = mapped_column(Text)
     priority: Mapped[str] = mapped_column(String(10), default="medium")
     deadline: Mapped[str | None] = mapped_column(String(20))
 

@@ -33,13 +33,19 @@ def test_build_task_kwargs_maps_fields():
         "priority": "medium",
         "deadline": "2026-02-20",
     }
+    raw_text = (
+        "Описание задания:\n"
+        "Оригинальное описание.\n"
+        "Одежда: красное платье\n"
+        "Заметки: без музыки\n"
+    )
 
     kwargs = build_task_kwargs(
         data,
         message_id=1,
         chat_id=-100,
         topic_id=777,
-        raw_text="raw",
+        raw_text=raw_text,
         ai_confidence=0.9,
         sender_username="user",
     )
@@ -47,7 +53,10 @@ def test_build_task_kwargs_maps_fields():
     assert kwargs["message_id"] == 1
     assert kwargs["chat_id"] == -100
     assert kwargs["topic_id"] == 777
-    assert kwargs["raw_text"] == "raw"
+    assert kwargs["raw_text"] == raw_text
     assert kwargs["ai_confidence"] == 0.9
     assert kwargs["sender_username"] == "user"
     assert kwargs["payment_note"] == "half"
+    assert kwargs["description_original"] == "Оригинальное описание."
+    assert kwargs["outfit_original"] == "красное платье"
+    assert kwargs["notes_original"] == "без музыки"

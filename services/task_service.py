@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from core.brief_text_parser import parse_original_brief_sections
 from core.constants import VALID_PRIORITIES
 from db.repo import task_repo
 
@@ -32,6 +33,8 @@ def build_task_kwargs(
     sender_username: str | None,
 ) -> dict:
     """Build the kwargs dict for task_repo.create_task from AI classification data."""
+    original_sections = parse_original_brief_sections(raw_text)
+
     return {
         "message_id": message_id,
         "chat_id": chat_id,
@@ -51,6 +54,9 @@ def build_task_kwargs(
         "description": data.get("description"),
         "outfit": data.get("outfit"),
         "notes": data.get("notes"),
+        "description_original": original_sections["description_original"],
+        "outfit_original": original_sections["outfit_original"],
+        "notes_original": original_sections["notes_original"],
         "priority": data.get("priority", "medium"),
         "deadline": data.get("deadline"),
     }

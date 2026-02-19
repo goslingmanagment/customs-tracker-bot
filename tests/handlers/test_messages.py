@@ -113,7 +113,16 @@ async def test_handle_edited_message_not_linked_reprocesses(monkeypatch):
 async def test_handle_edited_message_updates_existing_task(monkeypatch):
     session = _Session()
     bot = __import__("tests.fakes", fromlist=["FakeBot"]).FakeBot()
-    msg = FakeMessage(text="updated text", bot=bot, from_user=make_user(5, "editor"))
+    msg = FakeMessage(
+        text=(
+            "Описание задания:\n"
+            "Новый оригинальный блок.\n"
+            "Одежда: аутфит из скрина\n"
+            "Заметки: без музыки\n"
+        ),
+        bot=bot,
+        from_user=make_user(5, "editor"),
+    )
 
     task = FakeTask(
         id=11,
@@ -122,6 +131,9 @@ async def test_handle_edited_message_updates_existing_task(monkeypatch):
         message_id=msg.message_id,
         bot_message_id=888,
         description="old",
+        description_original="old original",
+        outfit_original="old outfit",
+        notes_original="old notes",
     )
 
     async def _get_task(*_args, **_kwargs):
@@ -144,4 +156,7 @@ async def test_handle_edited_message_updates_existing_task(monkeypatch):
     assert task.description == "new desc"
     assert task.priority == "high"
     assert task.deadline == "2026-02-20"
+    assert task.description_original == "Новый оригинальный блок."
+    assert task.outfit_original == "аутфит из скрина"
+    assert task.notes_original == "без музыки"
     assert bot.edited_texts and bot.edited_texts[0]["message_id"] == 888

@@ -6,6 +6,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from ai.classifier import classify_message
+from core.brief_text_parser import parse_original_brief_sections
 from core.exceptions import AITransientError
 from core.permissions import can_add_brief
 from core.text_utils import esc
@@ -116,12 +117,16 @@ async def cmd_add(message: Message):
                 sender_username=replied.from_user.username if replied.from_user else None,
             )
         else:
+            original_sections = parse_original_brief_sections(text)
             kwargs = {
                 "message_id": replied.message_id,
                 "chat_id": replied.chat.id,
                 "topic_id": replied.message_thread_id,
                 "raw_text": text,
                 "description": text[:200],
+                "description_original": original_sections["description_original"],
+                "outfit_original": original_sections["outfit_original"],
+                "notes_original": original_sections["notes_original"],
                 "priority": "medium",
                 "ai_confidence": confidence or 0,
             }

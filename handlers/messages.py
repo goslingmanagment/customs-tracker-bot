@@ -5,6 +5,7 @@ from aiogram import Router
 from aiogram.types import Message
 
 from ai.classifier import classify_message
+from core.brief_text_parser import parse_original_brief_sections
 from core.config import runtime
 from core.exceptions import AITransientError
 from core.log_utils import message_log_context
@@ -133,6 +134,7 @@ async def handle_edited_message(message: Message):
             return
 
         task.raw_text = text
+        original_sections = parse_original_brief_sections(text)
         task.task_date = data.get("task_date", task.task_date)
         task.fan_link = data.get("fan_link", task.fan_link)
         task.fan_name = data.get("fan_name", task.fan_name)
@@ -145,6 +147,9 @@ async def handle_edited_message(message: Message):
         task.description = data.get("description", task.description)
         task.outfit = data.get("outfit", task.outfit)
         task.notes = data.get("notes", task.notes)
+        task.description_original = original_sections["description_original"]
+        task.outfit_original = original_sections["outfit_original"]
+        task.notes_original = original_sections["notes_original"]
         task.priority = data.get("priority", task.priority)
         task.deadline = data.get("deadline", task.deadline)
 

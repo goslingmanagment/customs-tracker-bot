@@ -191,3 +191,6 @@ class FakeTask:
     amount_remaining: float | None = None
     outfit: str | None = None
     notes: str | None = None
+    description_original: str | None = None
+    outfit_original: str | None = None
+    notes_original: str | None = None

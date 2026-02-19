@@ -109,7 +109,13 @@
         <!-- Separator -->
         <div class="h-px bg-sand-300/60 my-6"></div>
 
-        <!-- Full text fields -->
+        <!-- Summary and original text fields -->
+        {% if task.description or task.outfit or task.notes %}
+        <div class="mb-6">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Краткая выжимка (AI)</span>
+        </div>
+        {% endif %}
+
         {% if task.description %}
         <div class="mb-5">
             <span class="text-2xs text-ink-muted uppercase tracking-wider">Описание</span>
@@ -128,6 +134,42 @@
         <div class="mb-5">
             <span class="text-2xs text-ink-muted uppercase tracking-wider">Заметки</span>
             <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.notes }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.description_original or task.outfit_original or task.notes_original %}
+        <div class="h-px bg-sand-300/60 my-6"></div>
+        <div class="mb-6">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Оригинальные детали</span>
+        </div>
+        {% endif %}
+
+        {% if task.description_original %}
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Описание (оригинал)</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.description_original }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.outfit_original %}
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Наряд (оригинал)</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.outfit_original }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.notes_original %}
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Заметки (оригинал)</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.notes_original }}</p>
+        </div>
+        {% endif %}
+
+        {% if task.raw_text %}
+        <div class="h-px bg-sand-300/60 my-6"></div>
+        <div class="mb-5">
+            <span class="text-2xs text-ink-muted uppercase tracking-wider">Исходный текст брифа</span>
+            <p class="text-ink-secondary text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{{ task.raw_text }}</p>
         </div>
         {% endif %}
 
