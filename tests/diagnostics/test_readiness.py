@@ -39,17 +39,11 @@ def test_evaluate_brief_env_readiness_detects_missing_values():
 def test_evaluate_brief_env_readiness_warning_matrix():
     _set_valid_config()
     runtime.ai_confidence_threshold = 1.5
-    runtime.reminder_hours_before = 0
-    runtime.overdue_reminder_cooldown_hours = 0
-    runtime.high_urgency_cooldown_hours = 0
     runtime.finished_reminder_hours = 0
 
     result = readiness.evaluate_brief_env_readiness()
 
     assert readiness.WARNING_AI_CONFIDENCE_THRESHOLD_RANGE in result.warnings
-    assert readiness.WARNING_REMINDER_HOURS_BEFORE_INVALID in result.warnings
-    assert readiness.WARNING_OVERDUE_REMINDER_COOLDOWN_HOURS_INVALID in result.warnings
-    assert readiness.WARNING_HIGH_URGENCY_COOLDOWN_HOURS_INVALID in result.warnings
     assert readiness.WARNING_FINISHED_REMINDER_HOURS_INVALID in result.warnings
 
 

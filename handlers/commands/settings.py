@@ -22,20 +22,8 @@ _SETTINGS_HINTS: dict[str, tuple[str, str]] = {
         "Порог уверенности AI. Если ниже порога — бриф не будет авто-принят.",
         "/settings confidence 0.8",
     ),
-    "reminder_hours": (
-        "За сколько часов до дедлайна отправлять напоминание.",
-        "/settings reminder_hours 12",
-    ),
-    "overdue_cooldown_hours": (
-        "Интервал повторных напоминаний для просроченных задач.",
-        "/settings overdue_cooldown_hours 4",
-    ),
-    "high_urgency_cooldown_hours": (
-        "Интервал повторных напоминаний для срочных задач.",
-        "/settings high_urgency_cooldown_hours 2",
-    ),
     "finished_reminder_hours": (
-        "Через сколько часов напоминать о задаче в статусе «Отснято».",
+        "Через сколько часов «Отснято» задача появляется в утреннем дайджесте.",
         "/settings finished_reminder_hours 24",
     ),
 }
@@ -46,26 +34,13 @@ def _settings_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="🎯 confidence", callback_data="settings:help:confidence"),
-                InlineKeyboardButton(text="⏰ reminder", callback_data="settings:help:reminder_hours"),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🚨 overdue",
-                    callback_data="settings:help:overdue_cooldown_hours",
-                ),
-                InlineKeyboardButton(
-                    text="🔥 high urgency",
-                    callback_data="settings:help:high_urgency_cooldown_hours",
-                ),
-            ],
-            [
                 InlineKeyboardButton(
                     text="📹 finished",
                     callback_data="settings:help:finished_reminder_hours",
                 ),
-                InlineKeyboardButton(text="♻️ reset", callback_data="settings:reset"),
             ],
             [
+                InlineKeyboardButton(text="♻️ reset", callback_data="settings:reset"),
                 InlineKeyboardButton(text="🔄 Обновить", callback_data="settings:show"),
             ],
         ]
@@ -78,9 +53,6 @@ def _settings_usage() -> str:
         "/settings — показать текущие настройки\n"
         "/settings reset — сбросить runtime-настройки по умолчанию\n"
         "/settings confidence 0.8\n"
-        "/settings reminder_hours 12\n"
-        "/settings overdue_cooldown_hours 4\n"
-        "/settings high_urgency_cooldown_hours 2\n"
         "/settings finished_reminder_hours 24\n"
         "/settings timezone Europe/Kyiv (отключено: timezone фиксирован)"
     )
@@ -91,14 +63,8 @@ def _settings_snapshot_text() -> str:
         "⚙️ <b>Текущие runtime-настройки</b>\n\n"
         f"confidence: <code>{runtime.ai_confidence_threshold:.2f}</code> — "
         "порог уверенности AI (0.0–1.0)\n"
-        f"reminder_hours: <code>{runtime.reminder_hours_before}</code> — "
-        "напоминание за N часов до дедлайна\n"
-        f"overdue_cooldown_hours: <code>{runtime.overdue_reminder_cooldown_hours}</code> — "
-        "интервал повторных напоминаний о просрочке\n"
-        f"high_urgency_cooldown_hours: <code>{runtime.high_urgency_cooldown_hours}</code> — "
-        "интервал для срочных задач\n"
         f"finished_reminder_hours: <code>{runtime.finished_reminder_hours}</code> — "
-        "напомнить о недоставленном через N часов\n"
+        "порог для «Отснято, но не доставлено» в дайджесте\n"
         f"timezone: <code>{runtime.timezone}</code> (фиксировано)\n"
     )
 
@@ -108,9 +74,6 @@ async def _reset_runtime_settings() -> dict:
         await settings_repo.upsert_app_settings(
             session,
             ai_confidence_threshold=0.7,
-            reminder_hours_before=24,
-            overdue_reminder_cooldown_hours=4,
-            high_urgency_cooldown_hours=2,
             finished_reminder_hours=24,
         )
         await session.commit()
@@ -133,12 +96,6 @@ def _settings_hint_text(key: str) -> str:
 def _current_setting_value(key: str) -> str:
     if key == "confidence":
         return f"{runtime.ai_confidence_threshold:.2f}"
-    if key == "reminder_hours":
-        return str(runtime.reminder_hours_before)
-    if key == "overdue_cooldown_hours":
-        return str(runtime.overdue_reminder_cooldown_hours)
-    if key == "high_urgency_cooldown_hours":
-        return str(runtime.high_urgency_cooldown_hours)
     if key == "finished_reminder_hours":
         return str(runtime.finished_reminder_hours)
     return "—"
@@ -212,24 +169,6 @@ async def cmd_settings(message: Message):
             await message.reply("confidence должен быть числом в диапазоне 0..1")
             return
         update_kwargs["ai_confidence_threshold"] = value
-    elif key == "reminder_hours":
-        value = _parse_int(raw_value)
-        if value is None or value <= 0:
-            await message.reply("reminder_hours должен быть целым числом > 0")
-            return
-        update_kwargs["reminder_hours_before"] = value
-    elif key == "overdue_cooldown_hours":
-        value = _parse_int(raw_value)
-        if value is None or value <= 0:
-            await message.reply("overdue_cooldown_hours должен быть целым числом > 0")
-            return
-        update_kwargs["overdue_reminder_cooldown_hours"] = value
-    elif key == "high_urgency_cooldown_hours":
-        value = _parse_int(raw_value)
-        if value is None or value <= 0:
-            await message.reply("high_urgency_cooldown_hours должен быть целым числом > 0")
-            return
-        update_kwargs["high_urgency_cooldown_hours"] = value
     elif key == "finished_reminder_hours":
         value = _parse_int(raw_value)
         if value is None or value <= 0:

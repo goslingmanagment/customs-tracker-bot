@@ -2,7 +2,7 @@
 
 Telegram bot for tracking custom content orders in a forum-topic workflow.
 
-The bot watches one configured Telegram topic, detects new briefs, creates task cards, manages lifecycle state changes through inline buttons, and sends scheduled reminders/digests. It uses Claude (Anthropic) for brief classification and SQLite (via SQLAlchemy + Alembic) for persistence.
+The bot watches one configured Telegram topic, detects new briefs, creates task cards, manages lifecycle state changes through inline buttons, and sends a daily morning digest. It uses Claude (Anthropic) for brief classification and SQLite (via SQLAlchemy + Alembic) for persistence.
 
 ## What This Project Does
 
@@ -13,7 +13,7 @@ The bot watches one configured Telegram topic, detects new briefs, creates task 
   - `draft -> awaiting_confirmation -> processing -> finished -> delivered`
   - terminal states: `delivered`, `cancelled`
 - Manages role-based access (`admin`, `model`, `teamlead`) from DB-backed memberships.
-- Runs background jobs for overdue alerts, upcoming deadline alerts, finished-not-delivered alerts, morning digest, and AI retry processing.
+- Runs background jobs for daily morning digest (with overdue/due-today/finished-not-delivered details) and AI retry processing.
 - Provides operational commands for setup, health checks, settings, stats, task browsing, and role management.
 
 ## Architecture Overview
@@ -97,7 +97,7 @@ Role assignments for `admin`, `model`, `teamlead`, supporting ID and/or username
 Runtime-configurable settings:
 - working chat/topic IDs
 - AI model + confidence threshold
-- reminder intervals and cooldowns
+- finished reminder hours (threshold for "finished but not delivered" in digest)
 - timezone (stored but runtime currently forced to `Europe/Moscow`)
 
 ## Task Lifecycle
@@ -170,9 +170,6 @@ Runtime settings are stored in DB (`app_settings`) and loaded into `core.config.
 
 Supported keys:
 - `confidence`
-- `reminder_hours`
-- `overdue_cooldown_hours`
-- `high_urgency_cooldown_hours`
 - `finished_reminder_hours`
 - `reset` (restore defaults)
 
@@ -311,24 +308,13 @@ Behavior:
 Scheduler loop runs every minute and triggers jobs by interval:
 
 - Retry queue scan: every 1 minute
-- Overdue reminders: every 30 minutes
-- Upcoming deadlines: every 1 hour
-- Finished-not-delivered reminders: every 1 hour
-- Morning digest: once per day at local hour `9`
-
-### Reminder behavior
-
-- Uses `last_reminder_at` cooldown.
-- Cooldown source:
-  - high-priority tasks: `high_urgency_cooldown_hours`
-  - others: `overdue_reminder_cooldown_hours`
-- Upcoming reminder window is derived from `reminder_hours_before` (rounded up to days).
+- Morning digest: once per day at local hour `9` (includes overdue tasks, due-today tasks, finished-not-delivered tasks, and summary stats)
 
 ## Health/Readiness Checks
 
 `diagnostics/readiness.py` provides:
 - blockers (missing bot token/API key/chat/topic/model/invalid timezone)
-- warnings (invalid ranges for confidence/cooldown/reminder settings)
+- warnings (invalid ranges for confidence/finished_reminder_hours settings)
 
 Startup behavior:
 - fatal blockers: missing/invalid bot token, missing Anthropic key -> startup exits with `StartupConfigError`

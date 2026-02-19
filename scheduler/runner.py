@@ -9,16 +9,11 @@ from aiogram import Bot
 
 from core.config import runtime
 from core.constants import (
-    HOURLY_CHECK_INTERVAL,
     MORNING_DIGEST_HOUR,
-    OVERDUE_CHECK_INTERVAL,
     RETRY_SCAN_INTERVAL,
 )
 from db.engine import async_session
-from scheduler.jobs.deadline_reminder import check_upcoming_deadlines
-from scheduler.jobs.delivery_reminder import check_finished_pending_delivery
 from scheduler.jobs.morning_digest import send_morning_digest
-from scheduler.jobs.overdue_reminder import check_overdue_and_remind
 from scheduler.jobs.retry_processor import process_ai_retry_queue
 
 logger = structlog.get_logger()
@@ -33,8 +28,6 @@ def _local_now() -> datetime:
 
 async def start_scheduler(bot: Bot) -> None:
     logger.info("scheduler_started")
-    last_overdue_run_at: datetime | None = None
-    last_hourly_run_at: datetime | None = None
     last_retry_scan_at: datetime | None = None
     last_morning_digest_date: date | None = None
 
@@ -48,21 +41,9 @@ async def start_scheduler(bot: Bot) -> None:
                     await process_ai_retry_queue(bot, session)
                 last_retry_scan_at = now
 
-            if last_overdue_run_at is None or (now - last_overdue_run_at) >= OVERDUE_CHECK_INTERVAL:
-                async with async_session() as session:
-                    await check_overdue_and_remind(bot, session)
-                last_overdue_run_at = now
-
-            if last_hourly_run_at is None or (now - last_hourly_run_at) >= HOURLY_CHECK_INTERVAL:
-                async with async_session() as session:
-                    await check_upcoming_deadlines(bot, session)
-                async with async_session() as session:
-                    await check_finished_pending_delivery(bot, session)
-                last_hourly_run_at = now
-
             local_now = _local_now()
             if (
-                local_now.hour == MORNING_DIGEST_HOUR
+                local_now.hour >= MORNING_DIGEST_HOUR
                 and local_now.date() != last_morning_digest_date
             ):
                 async with async_session() as session:

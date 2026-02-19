@@ -35,8 +35,6 @@ AMOUNT_FIELDS = ("amount_total", "amount_paid", "amount_remaining")
 RETRY_BACKOFF_MINUTES = [2, 5, 10, 20, 40]
 MAX_RETRY_ATTEMPTS = 5
 MAX_RETRY_WINDOW = timedelta(hours=2)
-OVERDUE_CHECK_INTERVAL = timedelta(minutes=30)
-HOURLY_CHECK_INTERVAL = timedelta(hours=1)
 RETRY_SCAN_INTERVAL = timedelta(minutes=1)
 MORNING_DIGEST_HOUR = 9
 

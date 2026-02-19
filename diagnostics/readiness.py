@@ -22,9 +22,6 @@ BLOCKER_AI_MODEL_MISSING = "ai_model_missing"
 BLOCKER_TIMEZONE_INVALID = "timezone_invalid"
 
 WARNING_AI_CONFIDENCE_THRESHOLD_RANGE = "ai_confidence_threshold_out_of_range"
-WARNING_REMINDER_HOURS_BEFORE_INVALID = "reminder_hours_before_invalid"
-WARNING_OVERDUE_REMINDER_COOLDOWN_HOURS_INVALID = "overdue_reminder_cooldown_hours_invalid"
-WARNING_HIGH_URGENCY_COOLDOWN_HOURS_INVALID = "high_urgency_cooldown_hours_invalid"
 WARNING_FINISHED_REMINDER_HOURS_INVALID = "finished_reminder_hours_invalid"
 
 _STARTUP_FATAL_BLOCKERS = {
@@ -108,12 +105,6 @@ def evaluate_brief_env_readiness() -> BriefEnvReadiness:
     if not isinstance(threshold, (int, float)) or threshold < 0 or threshold > 1:
         readiness.warnings.append(WARNING_AI_CONFIDENCE_THRESHOLD_RANGE)
 
-    if not _is_positive_int(runtime.reminder_hours_before):
-        readiness.warnings.append(WARNING_REMINDER_HOURS_BEFORE_INVALID)
-    if not _is_positive_int(runtime.overdue_reminder_cooldown_hours):
-        readiness.warnings.append(WARNING_OVERDUE_REMINDER_COOLDOWN_HOURS_INVALID)
-    if not _is_positive_int(runtime.high_urgency_cooldown_hours):
-        readiness.warnings.append(WARNING_HIGH_URGENCY_COOLDOWN_HOURS_INVALID)
     if not _is_positive_int(runtime.finished_reminder_hours):
         readiness.warnings.append(WARNING_FINISHED_REMINDER_HOURS_INVALID)
 
