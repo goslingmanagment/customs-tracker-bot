@@ -40,6 +40,14 @@ def test_normalize_classifier_result_rejects_invalid_schema():
     assert classifier._normalize_classifier_result({"is_task": False, "confidence": 1.5}) is None
 
 
+def test_normalize_classifier_result_defaults_reason_to_russian():
+    payload = {"is_task": False, "confidence": 0.8, "reason": "   "}
+
+    result = classifier._normalize_classifier_result(payload)
+
+    assert result == {"is_task": False, "confidence": 0.8, "reason": "не бриф"}
+
+
 @pytest.mark.asyncio
 async def test_classify_message_strips_markdown_json(monkeypatch):
     async def _create(**_kwargs):

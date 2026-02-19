@@ -261,6 +261,7 @@ Classifier:
 - model from runtime settings (`runtime.ai_model`)
 - system prompt in `ai/prompts.py`
 - strict JSON normalization and schema checks
+- AI text policy: `description`, `outfit`, `notes`, and non-task `reason` are generated in Russian
 
 Inline retries:
 - max inline retries: `AI_MAX_INLINE_RETRIES = 2`
@@ -276,6 +277,34 @@ Retry queue policy:
 - max attempts: `5`
 - max retry window: `2 hours`
 - exhausted items are logged to `parse_failures`, marked processed, and alert is sent to working chat/topic.
+
+## Historical Russian Text Backfill
+
+Use the one-off CLI script to reclassify existing tasks and update text fields:
+- `description`
+- `outfit`
+- `notes`
+
+Dry-run (default):
+
+```bash
+uv run python /Users/dmitriy/code/customs-tracker-bot/scripts/backfill_russian_text_fields.py
+```
+
+Apply changes:
+
+```bash
+uv run python /Users/dmitriy/code/customs-tracker-bot/scripts/backfill_russian_text_fields.py --apply
+```
+
+Optional filters:
+- `--task-id <id>`: process one task
+- `--limit <N>`: process only first N tasks by id
+
+Behavior:
+- best-effort: failures are reported per task and processing continues
+- exit code is non-zero if any task failed
+- non-task `reason` is not backfilled historically because it is not stored in the `tasks` table
 
 ## Scheduler Jobs
 
@@ -394,4 +423,3 @@ For access outside localhost, set up a reverse proxy (nginx/caddy) and set `WEB_
 - `handlers/callbacks.py`
 - `db/models.py`
 - `scheduler/runner.py`
-

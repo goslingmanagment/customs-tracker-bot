@@ -82,7 +82,7 @@ def _normalize_classifier_result(payload: Any) -> dict | None:
         return None
 
     if not is_task:
-        reason = _as_optional_text(payload.get("reason")) or "not_a_brief"
+        reason = _as_optional_text(payload.get("reason")) or "не бриф"
         return {
             "is_task": False,
             "confidence": confidence_val,

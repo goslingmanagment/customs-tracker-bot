@@ -85,6 +85,11 @@ If it is NOT a brief:
 - "Medium/High" → "high"
 - Not specified → "medium"
 
+### Output Language
+- Always write `description`, `outfit`, and `notes` in Russian.
+- Always write `reason` in Russian when `is_task` is false.
+- If the source brief is in another language, translate these fields to Russian.
+
 ### Description
 - Condensed task description in 1-2 sentences. Don't copy the entire text, create a brief summary.
 
